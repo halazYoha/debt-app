@@ -7,8 +7,6 @@ import '../../../core/ethiopian_date.dart';
 
 enum DebtorFilter { all, over50k }
 
-enum DateFilterType { all, today, thisWeek, thisMonth, oneYearAgo }
-
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -19,7 +17,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _searchQuery = '';
   DebtorFilter _selectedFilter = DebtorFilter.all;
-  DateFilterType _dateFilter = DateFilterType.all;
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -57,34 +54,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               return false;
             }
 
-            // 2. Date Filter
-            final now = DateTime.now();
-            final bDate = debtor.borrowedDate;
-
-            switch (_dateFilter) {
-              case DateFilterType.today:
-                if (bDate.year != now.year || bDate.month != now.month || bDate.day != now.day) {
-                  return false;
-                }
-                break;
-              case DateFilterType.thisWeek:
-                final weekAgo = now.subtract(const Duration(days: 7));
-                if (bDate.isBefore(weekAgo)) return false;
-                break;
-              case DateFilterType.thisMonth:
-                final nowEth = EthiopianDate.fromGregorian(now);
-                final bEth = EthiopianDate.fromGregorian(bDate);
-                if (bEth.year != nowEth.year || bEth.month != nowEth.month) return false;
-                break;
-              case DateFilterType.oneYearAgo:
-                final yearAgo = now.subtract(const Duration(days: 365));
-                if (bDate.isBefore(yearAgo)) return false;
-                break;
-              case DateFilterType.all:
-                break;
-            }
-
-            // 3. Search Query Filter
+            // 2. Search Query Filter
             final query = _searchQuery.toLowerCase();
             if (query.isEmpty) return true;
             return debtor.name.toLowerCase().contains(query) || debtor.phone.contains(query);
@@ -225,58 +195,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
 
-              // ── Quick Date Filters Row ───────────────────────────────────
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-                child: Row(
-                  children: [
-                    _dateChip('ሁሉም ቀናት', DateFilterType.all),
-                    const SizedBox(width: 8),
-                    _dateChip('ዛሬ', DateFilterType.today),
-                    const SizedBox(width: 8),
-                    _dateChip('በዚህ ሳምንት', DateFilterType.thisWeek),
-                    const SizedBox(width: 8),
-                    _dateChip('በዚህ ወር', DateFilterType.thisMonth),
-                    const SizedBox(width: 8),
-                    _dateChip('የ1 ዓመት', DateFilterType.oneYearAgo),
-                  ],
-                ),
-              ),
-
-              // Active Date Filter Reset Banner
-              if (_dateFilter != DateFilterType.all)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.filter_alt_outlined, size: 16, color: Colors.blue),
-                        const SizedBox(width: 8),
-                        const Expanded(
-                          child: Text(
-                            'የቀን ማጣሪያ ነቅቷል',
-                            style: TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () => setState(() => _dateFilter = DateFilterType.all),
-                          child: const Padding(
-                            padding: EdgeInsets.all(4.0),
-                            child: Text('✕ አፅዳ', style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
                 child: Text(
@@ -297,7 +215,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           )
                         : filteredDebtors.isEmpty
                             ? const Center(
-                                child: Text('ለተመረጠው የቀን ማጣሪያ ወይም ፍለጋ ውጤት አልተገኘም።'),
+                                child: Text('ለፍለጋዎ ውጤት አልተገኘም።'),
                               )
                             : ListView.builder(
                                 padding: const EdgeInsets.only(bottom: 80),
@@ -433,34 +351,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
-
-  Widget _dateChip(String label, DateFilterType type) {
-    final isSelected = _dateFilter == type;
-    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
-
-    return FilterChip(
-      selected: isSelected,
-      label: Text(
-        label,
-        style: TextStyle(
-          color: isSelected ? Colors.white : onSurfaceColor,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          fontSize: 12,
-        ),
-      ),
-      selectedColor: Theme.of(context).primaryColor,
-      backgroundColor: Theme.of(context).cardColor,
-      side: BorderSide(
-        color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade400,
-      ),
-      onSelected: (_) {
-        setState(() {
-          _dateFilter = type;
-        });
-      },
-    );
-  }
 }
+
 
 
 
