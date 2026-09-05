@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/ethiopian_date.dart';
+import '../../../core/ethiopian_date_picker.dart';
 import '../domain/debtor.dart';
 import '../data/debt_repository.dart';
 
@@ -38,6 +39,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
         name: widget.debtor.name,
         phone: widget.debtor.phone,
         items: [...widget.debtor.items, ...newItems],
+        repayments: widget.debtor.repayments,
         totalPaid: widget.debtor.totalPaid,
         borrowedDate: widget.debtor.borrowedDate,
         lastTransactionDate: DateTime.now(),
@@ -81,91 +83,141 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
   void _showAddCashLoanDialog() {
     _cashAmountController.clear();
     _cashNoteController.clear();
+    DateTime selectedDate = DateTime.now();
 
     showDialog(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
-            children: [
-              Icon(Icons.payments, color: Color(0xFFF59E0B)),
-              SizedBox(width: 8),
-              Text('ተጨማሪ ገንዘብ ብድር'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'ተበዳሪው ተጨማሪ ጥሬ ገንዘብ ሲበደር እዚህ ያስገቡ:',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Row(
+                children: [
+                  Icon(Icons.payments, color: Color(0xFFF59E0B)),
+                  SizedBox(width: 8),
+                  Text('ተጨማሪ ገንዘብ ብድር'),
+                ],
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _cashAmountController,
-                autofocus: true,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: 'የተበደረው ገንዘብ መጠን (ETB) *',
-                  prefixIcon: const Icon(Icons.attach_money),
-                  hintText: '0.00',
-                  suffixText: 'ETB',
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _cashNoteController,
-                decoration: InputDecoration(
-                  labelText: 'ማስታወሻ / ምክንያት (አስፈላጊ አይደለም)',
-                  prefixIcon: const Icon(Icons.note_alt_outlined),
-                  hintText: 'ምሳሌ፡ ለትራንስፖርት / ጥሬ ገንዘብ',
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('ሰርዝ'),
-            ),
-            ElevatedButton(
-              onPressed: _isLoading
-                  ? null
-                  : () {
-                      final amount =
-                          double.tryParse(_cashAmountController.text) ?? 0;
-                      if (amount <= 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('እባክዎ ትክክለኛ የገንዘብ መጠን ያስገቡ'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                        return;
-                      }
-                      final note = _cashNoteController.text.trim();
-                      final cashItem = DebtItem(
-                        name: note.isEmpty ? 'ጥሬ ገንዘብ' : 'ጥሬ ገንዘብ ($note)',
-                        quantity: 1,
-                        unit: 'ብር',
-                        unitPrice: amount,
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'ተበዳሪው ተጨማሪ ጥሬ ገንዘብ ሲበደር እዚህ ያስገቡ:',
+                    style: TextStyle(fontSize: 13, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 14),
+                  InkWell(
+                    onTap: () async {
+                      final picked = await EthiopianDatePickerDialog.show(
+                        context,
+                        initialDate: selectedDate,
                       );
-                      Navigator.pop(dialogContext);
-                      _addAdditionalItems([cashItem]);
+                      if (picked != null) {
+                        setDialogState(() => selectedDate = picked);
+                      }
                     },
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF59E0B)),
-              child: const Text('ገንዘብ ብድር አስቀምጥ'),
-            ),
-          ],
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade400),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calendar_today,
+                              size: 16, color: Color(0xFFF59E0B)),
+                          const SizedBox(width: 8),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('የተበደረበት ቀን',
+                                  style: TextStyle(
+                                      fontSize: 11, color: Colors.grey)),
+                              Text(
+                                EthiopianDate.formatShort(selectedDate),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                            ],
+                          ),
+                          const Spacer(),
+                          const Icon(Icons.edit_calendar,
+                              size: 16, color: Colors.grey),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _cashAmountController,
+                    autofocus: true,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: 'የተበደረው ገንዘብ መጠን (ETB) *',
+                      prefixIcon: const Icon(Icons.attach_money),
+                      hintText: '0.00',
+                      suffixText: 'ETB',
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _cashNoteController,
+                    decoration: InputDecoration(
+                      labelText: 'ማስታወሻ / ምክንያት (አስፈላጊ አይደለም)',
+                      prefixIcon: const Icon(Icons.note_alt_outlined),
+                      hintText: 'ምሳሌ፡ ለትራንስፖርት / ጥሬ ገንዘብ',
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('ሰርዝ'),
+                ),
+                ElevatedButton(
+                  onPressed: _isLoading
+                      ? null
+                      : () {
+                          final amount =
+                              double.tryParse(_cashAmountController.text) ?? 0;
+                          if (amount <= 0) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('እባክዎ ትክክለኛ የገንዘብ መጠን ያስገቡ'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+                          final note = _cashNoteController.text.trim();
+                          final cashItem = DebtItem(
+                            name: note.isEmpty ? 'ጥሬ ገንዘብ' : 'ጥሬ ገንዘብ ($note)',
+                            quantity: 1,
+                            unit: 'ብር',
+                            unitPrice: amount,
+                            date: selectedDate,
+                          );
+                          Navigator.pop(dialogContext);
+                          _addAdditionalItems([cashItem]);
+                        },
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF59E0B)),
+                  child: const Text('ገንዘብ ብድር አስቀምጥ'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -193,15 +245,26 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
 
     setState(() => _isLoading = true);
     try {
+      final now = DateTime.now();
+      final newTotalPaid = widget.debtor.totalPaid + amount;
+      final isNowSettled = newTotalPaid >= widget.debtor.totalBorrowed;
+      final newRepayment = RepaymentRecord(
+        amount: amount,
+        date: now,
+        note: isNowSettled ? 'ከፊል/ሙሉ ክፍያ' : 'ከፊል ክፍያ',
+      );
+      final updatedRepayments = [...widget.debtor.repayments, newRepayment];
+
       final updated = Debtor(
         id: widget.debtor.id,
         name: widget.debtor.name,
         phone: widget.debtor.phone,
         items: widget.debtor.items,
-        totalPaid: widget.debtor.totalPaid + amount,
+        repayments: updatedRepayments,
+        totalPaid: newTotalPaid,
         borrowedDate: widget.debtor.borrowedDate,
-        lastTransactionDate: DateTime.now(),
-        settledDate: widget.debtor.settledDate,
+        lastTransactionDate: now,
+        settledDate: isNowSettled ? now : widget.debtor.settledDate,
       );
       await ref.read(debtRepositoryProvider).updateDebtor(updated);
       if (mounted) {
@@ -254,11 +317,24 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
     setState(() => _isLoading = true);
     try {
       final now = DateTime.now();
+      final remaining = widget.debtor.remainingBalance;
+      final updatedRepayments =
+          List<RepaymentRecord>.from(widget.debtor.repayments);
+      if (remaining > 0) {
+        updatedRepayments.add(
+          RepaymentRecord(
+            amount: remaining,
+            date: now,
+            note: 'ሙሉ ዕዳ ተከፍሏል',
+          ),
+        );
+      }
       final updated = Debtor(
         id: widget.debtor.id,
         name: widget.debtor.name,
         phone: widget.debtor.phone,
         items: widget.debtor.items,
+        repayments: updatedRepayments,
         totalPaid: widget.debtor.totalBorrowed, // fully paid
         borrowedDate: widget.debtor.borrowedDate,
         lastTransactionDate: now,
@@ -554,26 +630,54 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                         ],
                       ),
                       const Divider(),
-                      ...debtor.items.map((item) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 5),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  flex: 4,
-                                  child: Text(item.name,
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.w500)),
+                      ...debtor.items.map((item) {
+                        final itemDate = item.date ?? debtor.borrowedDate;
+                        final formattedDate =
+                            EthiopianDate.formatShort(itemDate);
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                flex: 4,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(item.name,
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w500)),
+                                    const SizedBox(height: 2),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.calendar_today,
+                                            size: 11, color: Colors.grey),
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          formattedDate,
+                                          style: const TextStyle(
+                                              fontSize: 11, color: Colors.grey),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                                Expanded(
-                                  flex: 3,
+                              ),
+                              Expanded(
+                                flex: 3,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 2),
                                   child: Text(
                                     '${item.quantity} ${item.unit} × ${item.unitPrice.toStringAsFixed(0)}',
                                     style: const TextStyle(
                                         color: Colors.grey, fontSize: 13),
                                   ),
                                 ),
-                                Expanded(
-                                  flex: 3,
+                              ),
+                              Expanded(
+                                flex: 3,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 2),
                                   child: Text(
                                     '${item.subtotal.toStringAsFixed(0)} ETB',
                                     textAlign: TextAlign.end,
@@ -581,9 +685,11 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                                         fontWeight: FontWeight.bold),
                                   ),
                                 ),
-                              ],
-                            ),
-                          )),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
                       const Divider(),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -671,6 +777,142 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                       isNegative: !isSettled,
                       isPositive: isSettled,
                     ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // ── Repayment History Card ────────────────────────────────────
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.history, color: Color(0xFF10B981)),
+                        SizedBox(width: 8),
+                        Text(
+                          'የክፍያ ታሪክ',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (debtor.repayments.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Center(
+                          child: Text(
+                            'እስካሁን ምንም ክፍያ አልተመዘገበም',
+                            style: TextStyle(color: Colors.grey, fontSize: 13),
+                          ),
+                        ),
+                      )
+                    else ...[
+                      // Table header
+                      const Row(
+                        children: [
+                          Expanded(
+                            flex: 5,
+                            child: Text(
+                              'የክፍያ መጠን',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 5,
+                            child: Text(
+                              'የተከፈለበት ቀን',
+                              textAlign: TextAlign.end,
+                              style: TextStyle(
+                                  fontSize: 12, color: Colors.grey),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(),
+                      ...debtor.repayments.map((repayment) {
+                        final formattedTime =
+                            '${repayment.date.hour.toString().padLeft(2, '0')}:${repayment.date.minute.toString().padLeft(2, '0')}';
+                        final dateStr =
+                            '${EthiopianDate.formatShort(repayment.date)} ($formattedTime)';
+                        final hasNote = repayment.note != null &&
+                            repayment.note!.isNotEmpty;
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.check_circle_outline,
+                                          size: 16, color: Colors.green),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        '+ ${repayment.amount.toStringAsFixed(2)} ETB',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.green,
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    dateStr,
+                                    style: const TextStyle(
+                                        color: Colors.grey, fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                              if (hasNote)
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 22, top: 2),
+                                  child: Text(
+                                    'ማስታወሻ: ${repayment.note}',
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[700],
+                                        fontStyle: FontStyle.italic),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      }),
+                      const Divider(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'ጠቅላላ የተከፈለ',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                          Text(
+                            '${debtor.totalPaid.toStringAsFixed(2)} ETB',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -820,6 +1062,7 @@ class _AddItemsDialog extends StatefulWidget {
 
 class _AddItemsDialogState extends State<_AddItemsDialog> {
   final List<_AddItemRow> _rows = [];
+  DateTime _itemsDate = DateTime.now();
 
   @override
   void initState() {
@@ -870,6 +1113,50 @@ class _AddItemsDialogState extends State<_AddItemsDialog> {
               const Text(
                 'ተበዳሪው በሁለተኛውም ሆነ በሌላ ቀን የወሰዳቸውን ዕቃዎች ይጨምሩ:',
                 style: TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              const SizedBox(height: 12),
+              InkWell(
+                onTap: () async {
+                  final picked = await EthiopianDatePickerDialog.show(
+                    context,
+                    initialDate: _itemsDate,
+                  );
+                  if (picked != null) {
+                    setState(() => _itemsDate = picked);
+                  }
+                },
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade400),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.calendar_today,
+                          size: 16, color: Color(0xFF3B82F6)),
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('የዕቃ መውሰጃ ቀን',
+                              style: TextStyle(
+                                  fontSize: 11, color: Colors.grey)),
+                          Text(
+                            EthiopianDate.formatShort(_itemsDate),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      const Icon(Icons.edit_calendar,
+                          size: 16, color: Colors.grey),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 14),
 
@@ -1038,7 +1325,7 @@ class _AddItemsDialogState extends State<_AddItemsDialog> {
               : () {
                   final validItems = _rows
                       .where((r) => r.isValid)
-                      .map((r) => r.toDebtItem())
+                      .map((r) => r.toDebtItem(_itemsDate))
                       .toList();
                   if (validItems.isNotEmpty) {
                     widget.onSave(validItems);
@@ -1064,11 +1351,12 @@ class _AddItemRow {
   double get subtotal => qty * price;
   bool get isValid => nameCtrl.text.trim().isNotEmpty && qty > 0 && price > 0;
 
-  DebtItem toDebtItem() => DebtItem(
+  DebtItem toDebtItem([DateTime? date]) => DebtItem(
         name: nameCtrl.text.trim(),
         quantity: qty,
         unit: unitCtrl.text.trim().isNotEmpty ? unitCtrl.text.trim() : 'ኪሎ',
         unitPrice: price,
+        date: date,
       );
 
   void dispose() {

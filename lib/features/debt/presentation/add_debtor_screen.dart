@@ -28,11 +28,12 @@ class _ItemRow {
   bool get isValid =>
       nameCtrl.text.trim().isNotEmpty && qty > 0 && price > 0;
 
-  DebtItem toDebtItem() => DebtItem(
+  DebtItem toDebtItem([DateTime? date]) => DebtItem(
         name: nameCtrl.text.trim(),
         quantity: qty,
         unit: unitCtrl.text.trim(),
         unitPrice: price,
+        date: date,
       );
 
   void dispose() {
@@ -120,7 +121,7 @@ class _AddDebtorScreenState extends ConsumerState<AddDebtorScreen> {
         );
         return;
       }
-      debtItems = validItems.map((r) => r.toDebtItem()).toList();
+      debtItems = validItems.map((r) => r.toDebtItem(_borrowedDate)).toList();
     } else {
       final moneyAmount = double.tryParse(_moneyAmountController.text.trim()) ?? 0;
       if (moneyAmount <= 0) {
@@ -139,6 +140,7 @@ class _AddDebtorScreenState extends ConsumerState<AddDebtorScreen> {
           quantity: 1,
           unit: 'ብር',
           unitPrice: moneyAmount,
+          date: _borrowedDate,
         ),
       ];
     }
