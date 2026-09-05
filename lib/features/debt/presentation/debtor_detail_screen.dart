@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/ethiopian_date.dart';
 import '../../../core/ethiopian_date_picker.dart';
 import '../domain/debtor.dart';
@@ -27,6 +28,37 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
     _cashNoteController.dispose();
     super.dispose();
   }
+
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final cleanPhone = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+    if (cleanPhone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ለዚህ ተበዳሪ ስልክ ቁጥር አልተመዘገበም'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    final Uri launchUri = Uri(scheme: 'tel', path: cleanPhone);
+    try {
+      if (await canLaunchUrl(launchUri)) {
+        await launchUrl(launchUri);
+      } else {
+        await launchUrl(launchUri);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('ስልክ መደወል አልተቻለም: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
 
   // ── Core: Add items to debtor debt ───────────────────────────────────────
   Future<void> _addAdditionalItems(List<DebtItem> newItems) async {
@@ -465,6 +497,18 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
       appBar: AppBar(
         title: Text(debtor.name),
         actions: [
+          IconButton(
+            icon: Icon(
+              Icons.call,
+              color: debtor.phone.trim().isNotEmpty
+                  ? const Color(0xFF10B981)
+                  : Colors.grey.shade400,
+            ),
+            tooltip: debtor.phone.trim().isNotEmpty
+                ? 'ደውል (${debtor.phone})'
+                : 'ስልክ ቁጥር አልተመዘገበም',
+            onPressed: () => _makePhoneCall(debtor.phone),
+          ),
           if (!isSettled)
             PopupMenuButton<String>(
               onSelected: (value) {
@@ -532,15 +576,31 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                             fontSize: 22, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),
                     if (debtor.phone.isNotEmpty)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.phone, size: 14, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          Text(debtor.phone,
-                              style: const TextStyle(color: Colors.grey)),
-                        ],
+                      InkWell(
+                        onTap: () => _makePhoneCall(debtor.phone),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.phone,
+                                  size: 16, color: Color(0xFF10B981)),
+                              const SizedBox(width: 6),
+                              Text(
+                                debtor.phone,
+                                style: const TextStyle(
+                                  color: Color(0xFF10B981),
+                                  fontWeight: FontWeight.bold,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
+
                     const SizedBox(height: 4),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,

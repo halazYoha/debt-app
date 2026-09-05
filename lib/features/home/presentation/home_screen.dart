@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../debt/data/debt_repository.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../../core/ethiopian_date.dart';
@@ -25,6 +26,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.dispose();
   }
 
+  Future<void> _makePhoneCall(BuildContext context, String phoneNumber) async {
+    final cleanPhone = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+    if (cleanPhone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ለዚህ ተበዳሪ ስልክ ቁጥር አልተመዘገበም'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    final Uri launchUri = Uri(scheme: 'tel', path: cleanPhone);
+    try {
+      if (await canLaunchUrl(launchUri)) {
+        await launchUrl(launchUri);
+      } else {
+        await launchUrl(launchUri);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('ስልክ መደወል አልተቻለም: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final debtorsAsync = ref.watch(debtorsProvider);
@@ -46,11 +77,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: debtorsAsync.when(
         data: (allDebtors) {
           final totalOwed = allDebtors.fold(0.0, (sum, item) => sum + item.remainingBalance);
-          final over50kCount = allDebtors.where((d) => d.totalBorrowed > 50000).length;
+          final over50kCount = allDebtors.where((d) => d.remainingBalance > 50000).length;
 
           final filteredDebtors = allDebtors.where((debtor) {
-            // 1. Amount Filter
-            if (_selectedFilter == DebtorFilter.over50k && debtor.totalBorrowed <= 50000) {
+            // 1. Amount Filter (based on remaining net balance)
+            if (_selectedFilter == DebtorFilter.over50k && debtor.remainingBalance <= 50000) {
               return false;
             }
 
@@ -223,6 +254,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 itemBuilder: (context, index) {
                                   final debtor = filteredDebtors[index];
                                   final isSettled = debtor.remainingBalance <= 0;
+                                  final hasPhone = debtor.phone.trim().isNotEmpty;
                                   
                                   return Card(
                                     margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -241,7 +273,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       ),
                                       title: Text(debtor.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                                       subtitle: Text(
-                                        debtor.phone.isNotEmpty
+                                        hasPhone
                                             ? '${debtor.phone} · ${EthiopianDate.formatShort(debtor.borrowedDate)}'
                                             : EthiopianDate.formatShort(debtor.borrowedDate),
                                         style: const TextStyle(fontSize: 12),
@@ -249,6 +281,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       trailing: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
+                                          IconButton(
+                                            icon: Icon(
+                                              Icons.call,
+                                              color: hasPhone ? const Color(0xFF10B981) : Colors.grey.shade400,
+                                              size: 22,
+                                            ),
+                                            tooltip: hasPhone ? 'ደውል (${debtor.phone})' : 'ስልክ ቁጥር አልተመዘገበም',
+                                            onPressed: () => _makePhoneCall(context, debtor.phone),
+                                          ),
+                                          const SizedBox(width: 4),
                                           Column(
                                             mainAxisAlignment: MainAxisAlignment.center,
                                             crossAxisAlignment: CrossAxisAlignment.end,
@@ -352,6 +394,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 }
+
 
 
 
