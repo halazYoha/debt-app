@@ -94,4 +94,15 @@ class DebtRepository {
       throw Exception(AppErrorMapper.toAmharic(e));
     }
   }
+
+  Future<void> updateDebtorNameAndPhone(String id, String name, String phone) async {
+    try {
+      await _debtorsRef.doc(id).update({
+        'name': name.trim(),
+        'phone': phone.trim(),
+      });
+    } catch (e) {
+      throw Exception(AppErrorMapper.toAmharic(e));
+    }
+  }
 }

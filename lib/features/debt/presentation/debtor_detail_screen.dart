@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/app_error_mapper.dart';
 import '../../../core/ethiopian_date.dart';
 import '../../../core/ethiopian_date_picker.dart';
+import '../../../core/input_validators.dart';
 import '../domain/debtor.dart';
 import '../data/debt_repository.dart';
 
@@ -493,6 +494,118 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
     );
   }
 
+  void _showEditDebtorDialog(Debtor currentDebtor) {
+    final editNameController = TextEditingController(text: currentDebtor.name);
+    final editPhoneController = TextEditingController(text: currentDebtor.phone);
+    final editFormKey = GlobalKey<FormState>();
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            Future<void> saveEdit() async {
+              if (!editFormKey.currentState!.validate()) return;
+              setDialogState(() => isSaving = true);
+              try {
+                final newName = editNameController.text.trim();
+                final newPhone = editPhoneController.text.trim();
+                await ref
+                    .read(debtRepositoryProvider)
+                    .updateDebtorNameAndPhone(currentDebtor.id, newName, newPhone);
+                if (dialogContext.mounted) Navigator.pop(dialogContext);
+                if (mounted) {
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                    const SnackBar(
+                      content: Text('የተበዳሪው መረጃ ተዘምኗል! ✏️'),
+                      backgroundColor: Color(0xFF10B981),
+                    ),
+                  );
+                }
+              } catch (e) {
+                setDialogState(() => isSaving = false);
+                if (mounted) {
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                    SnackBar(
+                      content: Text(AppErrorMapper.toAmharic(e)),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            }
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Row(
+                children: [
+                  Icon(Icons.edit_note, color: Color(0xFF10B981)),
+                  SizedBox(width: 8),
+                  Text('የተበዳሪ መረጃ ማስተካከያ'),
+                ],
+              ),
+              content: Form(
+                key: editFormKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        controller: editNameController,
+                        decoration: const InputDecoration(
+                          labelText: 'ተበዳሪ ስም *',
+                          prefixIcon: Icon(Icons.person_outline),
+                        ),
+                        textCapitalization: TextCapitalization.words,
+                        validator: InputValidators.validateName,
+                        enabled: !isSaving,
+                      ),
+                      const SizedBox(height: 14),
+                      TextFormField(
+                        controller: editPhoneController,
+                        decoration: const InputDecoration(
+                          labelText: 'ስልክ ቁጥር (አስፈላጊ አይደለም)',
+                          prefixIcon: Icon(Icons.phone_outlined),
+                        ),
+                        keyboardType: TextInputType.phone,
+                        validator: InputValidators.validatePhone,
+                        enabled: !isSaving,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSaving ? null : () => Navigator.pop(dialogContext),
+                  child: const Text('ሰርዝ'),
+                ),
+                ElevatedButton(
+                  onPressed: isSaving ? null : saveEdit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: isSaving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('አስቀምጥ'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final debtorAsync = ref.watch(singleDebtorStreamProvider(widget.debtorId));
@@ -524,6 +637,11 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
         title: Text(debtor.name),
         actions: [
           IconButton(
+            icon: const Icon(Icons.edit_note, size: 26),
+            tooltip: 'መረጃ አርትዕ',
+            onPressed: () => _showEditDebtorDialog(debtor),
+          ),
+          IconButton(
             icon: Icon(
               Icons.call,
               color: debtor.phone.trim().isNotEmpty
@@ -535,12 +653,23 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                 : 'ስልክ ቁጥር አልተመዘገበም',
             onPressed: () => _makePhoneCall(debtor.phone),
           ),
-          if (!isSettled)
-            PopupMenuButton<String>(
-              onSelected: (value) {
-                if (value == 'fully_paid') _markFullyPaid(debtor);
-              },
-              itemBuilder: (_) => [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'edit') _showEditDebtorDialog(debtor);
+              if (value == 'fully_paid') _markFullyPaid(debtor);
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Text('ስም/ስልክ አስተካክል'),
+                  ],
+                ),
+              ),
+              if (!isSettled)
                 const PopupMenuItem(
                   value: 'fully_paid',
                   child: Row(
@@ -551,8 +680,8 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                     ],
                   ),
                 ),
-              ],
-            ),
+            ],
+          ),
         ],
       ),
       body: SingleChildScrollView(

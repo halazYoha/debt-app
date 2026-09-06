@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/app_error_mapper.dart';
 import '../../../core/ethiopian_date.dart';
 import '../../../core/ethiopian_date_picker.dart';
+import '../../../core/input_validators.dart';
 import '../domain/debtor.dart';
 import '../data/debt_repository.dart';
 
@@ -241,8 +242,7 @@ class _AddDebtorScreenState extends ConsumerState<AddDebtorScreen> {
                   prefixIcon: Icon(Icons.person_outline),
                 ),
                 textCapitalization: TextCapitalization.words,
-                validator: (v) =>
-                    v!.trim().isEmpty ? 'እባክዎ ስም ያስገቡ' : null,
+                validator: InputValidators.validateName,
               ),
               const SizedBox(height: 14),
               TextFormField(
@@ -252,6 +252,7 @@ class _AddDebtorScreenState extends ConsumerState<AddDebtorScreen> {
                   prefixIcon: Icon(Icons.phone_outlined),
                 ),
                 keyboardType: TextInputType.phone,
+                validator: InputValidators.validatePhone,
               ),
 
               const SizedBox(height: 24),

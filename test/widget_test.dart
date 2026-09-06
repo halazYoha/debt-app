@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:debt/features/debt/domain/debtor.dart';
+import 'package:debt/core/input_validators.dart';
 
 void main() {
   group('Domain Model Tests', () {
@@ -107,6 +108,24 @@ void main() {
       expect(protectedDebtor.shouldAutoDelete, isFalse);
       expect(protectedDebtor.isWarningAutoDelete, isFalse);
       expect(protectedDebtor.daysUntilDelete, isNull);
+    });
+
+    test('InputValidators name validation logic', () {
+      expect(InputValidators.validateName(''), 'እባክዎ የተበዳሪውን ስም ያስገቡ።');
+      expect(InputValidators.validateName('   '), 'እባክዎ የተበዳሪውን ስም ያስገቡ።');
+      expect(InputValidators.validateName('12345'), 'ስም ቁጥር ብቻ መሆን አይችልም። እባክዎ ትክክለኛ ስም ያስገቡ።');
+      expect(InputValidators.validateName('!!!'), 'ስም ቢያንስ አንድ ፊደል ማካተት አለበት።');
+      expect(InputValidators.validateName('አበበ ከበደ'), isNull);
+      expect(InputValidators.validateName('Abebe Kebede'), isNull);
+    });
+
+    test('InputValidators phone validation logic', () {
+      expect(InputValidators.validatePhone(''), isNull);
+      expect(InputValidators.validatePhone('0911223344'), isNull);
+      expect(InputValidators.validatePhone('0712345678'), isNull);
+      expect(InputValidators.validatePhone('+251911223344'), isNull);
+      expect(InputValidators.validatePhone('1234'), 'ትክክለኛ የስልክ ቁጥር ያስገቡ (ምሳሌ፡ 0911223344 ወይም 0711223344)');
+      expect(InputValidators.validatePhone('0811223344'), 'ትክክለኛ የስልክ ቁጥር ያስገቡ (ምሳሌ፡ 0911223344 ወይም 0711223344)');
     });
   });
 }
