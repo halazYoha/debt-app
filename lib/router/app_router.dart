@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../features/auth/presentation/login_screen.dart';
@@ -7,10 +8,20 @@ import '../features/debt/presentation/debtor_detail_screen.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/debt/domain/debtor.dart';
 
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
+void navigateToDebtorDetail(String debtorId) {
+  final context = rootNavigatorKey.currentContext;
+  if (context != null) {
+    context.go('/debtor/$debtorId');
+  }
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateChangesProvider);
 
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/login',
     redirect: (context, state) {
       final isLoggingIn = state.matchedLocation == '/login';

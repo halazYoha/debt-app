@@ -21,6 +21,9 @@ dependencies:
   intl: ^0.20.3
   url_launcher: ^6.3.2
   connectivity_plus: ^6.1.1
+  flutter_local_notifications: ^18.0.0
+  workmanager: ^0.10.9
+  permission_handler: ^11.3.0
 
 dev_dependencies:
   flutter_test:

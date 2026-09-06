@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../debt/data/debt_repository.dart';
-import '../../auth/data/auth_repository.dart';
 import '../../../core/ethiopian_date.dart';
 import '../../../core/offline_banner.dart';
+import '../../../core/app_drawer.dart';
 
 enum DebtorFilter { all, over50k }
 
@@ -64,17 +64,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
 
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('ዋና ገጽ'),
-        actions: [
-          IconButton(
-            tooltip: 'ውጣ',
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              ref.read(authRepositoryProvider).signOut();
-            },
-          ),
-        ],
       ),
       body: debtorsAsync.when(
         data: (allDebtors) {
