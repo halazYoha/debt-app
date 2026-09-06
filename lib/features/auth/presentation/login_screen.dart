@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/app_error_mapper.dart';
 import '../data/auth_repository.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -34,6 +35,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (email.isEmpty || password.isEmpty) {
         throw Exception('ኢሜይልና የይለፍ ቃል ባዶ መሆን አይችልም።');
       }
+      final emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+      if (!emailRegExp.hasMatch(email)) {
+        throw Exception('ትክክለኛ ኢሜይል አድራሻ ያስገቡ።');
+      }
+      if (!_isLogin && password.length < 6) {
+        throw Exception('የይለፍ ቃሉ በጣም አጭር ነው። ቢያንስ 6 ቁምፊዎች መሆን አለበት።');
+      }
       if (_isLogin) {
         await authRepo.signIn(email, password);
       } else {
@@ -41,9 +49,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString()
-            .replaceAll('Exception: ', '')
-            .replaceAll(RegExp(r'^\[.*?\] '), '');
+        _errorMessage = AppErrorMapper.toAmharic(e);
       });
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -99,10 +105,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 });
               } catch (e) {
                 setDialogState(() {
-                  dialogError = e
-                      .toString()
-                      .replaceAll('Exception: ', '')
-                      .replaceAll(RegExp(r'^\[.*?\] '), '');
+                  dialogError = AppErrorMapper.toAmharic(e);
                   isSending = false;
                 });
               }

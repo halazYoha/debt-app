@@ -1,12 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/app_error_mapper.dart';
 import '../../auth/data/auth_repository.dart';
 import '../domain/debtor.dart';
 
 final debtRepositoryProvider = Provider<DebtRepository>((ref) {
   final user = ref.watch(authStateChangesProvider).value;
   if (user == null) {
-    throw Exception('User is not authenticated');
+    throw Exception('እባክዎ መጀመሪያ ይግቡ።');
   }
   return DebtRepository(FirebaseFirestore.instance, user.uid);
 });
@@ -47,18 +48,34 @@ class DebtRepository {
   }
 
   Future<void> addDebtor(Debtor debtor) async {
-    await _debtorsRef.add(debtor.toFirestore());
+    try {
+      await _debtorsRef.add(debtor.toFirestore());
+    } catch (e) {
+      throw Exception(AppErrorMapper.toAmharic(e));
+    }
   }
 
   Future<void> updateDebtor(Debtor debtor) async {
-    await _debtorsRef.doc(debtor.id).update(debtor.toFirestore());
+    try {
+      await _debtorsRef.doc(debtor.id).update(debtor.toFirestore());
+    } catch (e) {
+      throw Exception(AppErrorMapper.toAmharic(e));
+    }
   }
 
   Future<void> deleteDebtor(String id) async {
-    await _debtorsRef.doc(id).delete();
+    try {
+      await _debtorsRef.doc(id).delete();
+    } catch (e) {
+      throw Exception(AppErrorMapper.toAmharic(e));
+    }
   }
 
   Future<void> keepDebtorRecord(String id) async {
-    await _debtorsRef.doc(id).update({'keepRecord': true});
+    try {
+      await _debtorsRef.doc(id).update({'keepRecord': true});
+    } catch (e) {
+      throw Exception(AppErrorMapper.toAmharic(e));
+    }
   }
 }

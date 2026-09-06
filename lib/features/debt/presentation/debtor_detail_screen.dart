@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/app_error_mapper.dart';
 import '../../../core/ethiopian_date.dart';
 import '../../../core/ethiopian_date_picker.dart';
 import '../domain/debtor.dart';
@@ -90,7 +91,10 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ስህተት: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(AppErrorMapper.toAmharic(e)),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -311,7 +315,10 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ስህተት: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(AppErrorMapper.toAmharic(e)),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -384,7 +391,10 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ስህተት: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(AppErrorMapper.toAmharic(e)),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {

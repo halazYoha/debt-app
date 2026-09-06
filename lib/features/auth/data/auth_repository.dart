@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/app_error_mapper.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(FirebaseAuth.instance);
@@ -20,17 +21,17 @@ class AuthRepository {
 
   Future<void> signIn(String email, String password) async {
     try {
-      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      await _auth.signInWithEmailAndPassword(email: email.trim(), password: password.trim());
     } catch (e) {
-      throw Exception(e.toString());
+      throw Exception(AppErrorMapper.toAmharic(e));
     }
   }
 
   Future<void> signUp(String email, String password) async {
     try {
-      await _auth.createUserWithEmailAndPassword(email: email, password: password);
+      await _auth.createUserWithEmailAndPassword(email: email.trim(), password: password.trim());
     } catch (e) {
-      throw Exception(e.toString());
+      throw Exception(AppErrorMapper.toAmharic(e));
     }
   }
 
@@ -43,21 +44,8 @@ class AuthRepository {
   Future<void> sendPasswordResetEmail(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email.trim());
-    } on FirebaseAuthException catch (e) {
-      switch (e.code) {
-        case 'user-not-found':
-          throw Exception('ይህ ኢሜይል አልተመዘገበም። ኢሜይሉን ያረጋግጡ።');
-        case 'invalid-email':
-          throw Exception('ትክክለኛ ኢሜይል ያስገቡ።');
-        case 'too-many-requests':
-          throw Exception('ብዙ ሙከራ አድርገዋል። ትንሽ ቆይተው ደግሜ ሞክሩ።');
-        case 'network-request-failed':
-          throw Exception('ኢንተርኔት ግንኙነት የለም። ኔትወርክዎን ያረጋግጡ።');
-        default:
-          throw Exception('ስህተት ተከስቷል። ደግሜ ሞክሩ።');
-      }
-    } catch (_) {
-      throw Exception('ስህተት ተከስቷል። ደግሜ ሞክሩ።');
+    } catch (e) {
+      throw Exception(AppErrorMapper.toAmharic(e));
     }
   }
 }

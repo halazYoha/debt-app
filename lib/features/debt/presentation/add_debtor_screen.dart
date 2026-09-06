@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/app_error_mapper.dart';
 import '../../../core/ethiopian_date.dart';
 import '../../../core/ethiopian_date_picker.dart';
 import '../domain/debtor.dart';
@@ -169,7 +170,10 @@ class _AddDebtorScreenState extends ConsumerState<AddDebtorScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ስህተት: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(AppErrorMapper.toAmharic(e)),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
