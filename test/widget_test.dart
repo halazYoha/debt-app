@@ -127,5 +127,66 @@ void main() {
       expect(InputValidators.validatePhone('1234'), 'ትክክለኛ የስልክ ቁጥር ያስገቡ (ምሳሌ፡ 0911223344 ወይም 0711223344)');
       expect(InputValidators.validatePhone('0811223344'), 'ትክክለኛ የስልክ ቁጥር ያስገቡ (ምሳሌ፡ 0911223344 ወይም 0711223344)');
     });
+
+    test('Debtor balance recalculation after deleting a repayment', () {
+      final now = DateTime.now();
+      final debtor = Debtor(
+        id: 'del-test',
+        name: 'ቤተልሄም',
+        phone: '0911000000',
+        items: [DebtItem(name: 'ዘይት', quantity: 1, unit: 'ሊትር', unitPrice: 1000)],
+        repayments: [
+          RepaymentRecord(amount: 600, date: now),
+          RepaymentRecord(amount: 400, date: now),
+        ],
+        totalPaid: 1000,
+        borrowedDate: now,
+        lastTransactionDate: now,
+        settledDate: now,
+      );
+
+      expect(debtor.isFullyPaid, isTrue);
+
+      // Simulate removing the second repayment
+      final updatedRepayments = List<RepaymentRecord>.from(debtor.repayments)
+        ..removeAt(1);
+      final newTotalPaid =
+          updatedRepayments.fold<double>(0.0, (sum, r) => sum + r.amount);
+      final isNowUnpaid = (debtor.totalBorrowed - newTotalPaid) > 0;
+
+      expect(newTotalPaid, 600.0);
+      expect(isNowUnpaid, isTrue); // settledDate should become null
+    });
+
+    test('Debtor settledDate preserved when edit repayment still fully pays', () {
+      final now = DateTime.now();
+      final debtor = Debtor(
+        id: 'edit-test',
+        name: 'ጌትነት',
+        phone: '0911000001',
+        items: [DebtItem(name: 'ቡና', quantity: 2, unit: 'ኪሎ', unitPrice: 400)],
+        repayments: [
+          RepaymentRecord(amount: 500, date: now),
+          RepaymentRecord(amount: 300, date: now),
+        ],
+        totalPaid: 800,
+        borrowedDate: now,
+        lastTransactionDate: now,
+        settledDate: now,
+      );
+
+      expect(debtor.totalBorrowed, 800.0);
+      expect(debtor.isFullyPaid, isTrue);
+
+      // Simulate editing repayment[0] from 500 → 600
+      final updatedRepayments = List<RepaymentRecord>.from(debtor.repayments);
+      updatedRepayments[0] = RepaymentRecord(amount: 600, date: now);
+      final newTotalPaid =
+          updatedRepayments.fold<double>(0.0, (sum, r) => sum + r.amount);
+
+      expect(newTotalPaid, 900.0);
+      expect(newTotalPaid >= debtor.totalBorrowed, isTrue); // still fully paid
+    });
   });
 }
+

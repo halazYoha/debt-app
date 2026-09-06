@@ -105,4 +105,63 @@ class DebtRepository {
       throw Exception(AppErrorMapper.toAmharic(e));
     }
   }
+
+  Future<void> deleteRepayment(Debtor debtor, int index) async {
+    try {
+      final updatedRepayments = List<RepaymentRecord>.from(debtor.repayments)
+        ..removeAt(index);
+      final newTotalPaid =
+          updatedRepayments.fold<double>(0.0, (acc, r) => acc + r.amount);
+      final isNowUnpaid = (debtor.totalBorrowed - newTotalPaid) > 0;
+      final updated = Debtor(
+        id: debtor.id,
+        name: debtor.name,
+        phone: debtor.phone,
+        items: debtor.items,
+        repayments: updatedRepayments,
+        totalPaid: newTotalPaid,
+        borrowedDate: debtor.borrowedDate,
+        lastTransactionDate: DateTime.now(),
+        settledDate: isNowUnpaid ? null : debtor.settledDate,
+        keepRecord: debtor.keepRecord,
+      );
+      await _debtorsRef.doc(debtor.id).update(updated.toFirestore());
+    } catch (e) {
+      throw Exception(AppErrorMapper.toAmharic(e));
+    }
+  }
+
+  Future<void> editRepayment(
+      Debtor debtor, int index, double newAmount, String? newNote) async {
+    try {
+      final old = debtor.repayments[index];
+      final updatedRepayments = List<RepaymentRecord>.from(debtor.repayments);
+      updatedRepayments[index] = RepaymentRecord(
+        amount: newAmount,
+        date: old.date,
+        note: newNote?.trim().isNotEmpty == true ? newNote!.trim() : old.note,
+      );
+      final newTotalPaid =
+          updatedRepayments.fold<double>(0.0, (acc, r) => acc + r.amount);
+      final isNowFullyPaid = newTotalPaid >= debtor.totalBorrowed;
+      final isNowUnpaid = !isNowFullyPaid;
+      final updated = Debtor(
+        id: debtor.id,
+        name: debtor.name,
+        phone: debtor.phone,
+        items: debtor.items,
+        repayments: updatedRepayments,
+        totalPaid: newTotalPaid,
+        borrowedDate: debtor.borrowedDate,
+        lastTransactionDate: DateTime.now(),
+        settledDate: isNowUnpaid
+            ? null
+            : (debtor.settledDate ?? DateTime.now()),
+        keepRecord: debtor.keepRecord,
+      );
+      await _debtorsRef.doc(debtor.id).update(updated.toFirestore());
+    } catch (e) {
+      throw Exception(AppErrorMapper.toAmharic(e));
+    }
+  }
 }

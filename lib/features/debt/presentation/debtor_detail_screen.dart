@@ -606,6 +606,189 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
     );
   }
 
+  // ── Edit a repayment dialog ─────────────────────────────────────────────────
+  void _showEditRepaymentDialog(
+      Debtor debtor, int index, RepaymentRecord record) {
+    final amtController =
+        TextEditingController(text: record.amount.toStringAsFixed(2));
+    final noteController =
+        TextEditingController(text: record.note ?? '');
+    final formKey = GlobalKey<FormState>();
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            Future<void> save() async {
+              if (!formKey.currentState!.validate()) return;
+              final newAmount = double.tryParse(amtController.text.trim());
+              if (newAmount == null || newAmount <= 0) return;
+              setDialogState(() => isSaving = true);
+              final messenger = ScaffoldMessenger.of(context);
+              try {
+                await ref
+                    .read(debtRepositoryProvider)
+                    .editRepayment(debtor, index, newAmount, noteController.text);
+                if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('ክፍያ ተስተካክሏል! ✅'),
+                    backgroundColor: Color(0xFF10B981),
+                  ),
+                );
+              } catch (e) {
+                setDialogState(() => isSaving = false);
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text(e.toString().replaceFirst('Exception: ', '')),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              title: const Row(
+                children: [
+                  Icon(Icons.edit_outlined, color: Color(0xFF10B981)),
+                  SizedBox(width: 8),
+                  Text('ክፍያ አስተካክል'),
+                ],
+              ),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: amtController,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        labelText: 'የክፍያ መጠን (ETB) *',
+                        prefixIcon: const Icon(Icons.attach_money),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'የክፍያ መጠን ያስገቡ';
+                        }
+                        final d = double.tryParse(v.trim());
+                        if (d == null || d <= 0) {
+                          return 'ትክክለኛ መጠን ያስገቡ';
+                        }
+                        return null;
+                      },
+                      enabled: !isSaving,
+                    ),
+                    const SizedBox(height: 14),
+                    TextFormField(
+                      controller: noteController,
+                      decoration: InputDecoration(
+                        labelText: 'ማስታወሻ (አስፈላጊ አይደለም)',
+                        prefixIcon: const Icon(Icons.notes_outlined),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      enabled: !isSaving,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed:
+                      isSaving ? null : () => Navigator.pop(dialogCtx),
+                  child: const Text('ሰርዝ'),
+                ),
+                ElevatedButton(
+                  onPressed: isSaving ? null : save,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: isSaving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white))
+                      : const Text('አስቀምጥ'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ── Confirm and delete a repayment ──────────────────────────────────────────
+  Future<void> _confirmDeleteRepayment(Debtor debtor, int index) async {
+    final record = debtor.repayments[index];
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red),
+            SizedBox(width: 8),
+            Text('ክፍያ ሰርዝ'),
+          ],
+        ),
+        content: Text(
+          'ይህን የ${record.amount.toStringAsFixed(2)} ETB ክፍያ '
+          'እርግጠኛ ሆነው ማጥፋት ይፈልጋሉ?\n\n'
+          'ይህ ተግባር ሊቀለበስ አይችልም።',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('አይ'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text('አዎ፣ ሰርዝ'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+    setState(() => _isLoading = true);
+    try {
+      await ref.read(debtRepositoryProvider).deleteRepayment(debtor, index);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('ክፍያ ተሰርዟል'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final debtorAsync = ref.watch(singleDebtorStreamProvider(widget.debtorId));
@@ -1119,7 +1302,9 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                         ],
                       ),
                       const Divider(),
-                      ...debtor.repayments.map((repayment) {
+                      ...debtor.repayments.asMap().entries.map((entry) {
+                        final idx = entry.key;
+                        final repayment = entry.value;
                         final formattedTime =
                             '${repayment.date.hour.toString().padLeft(2, '0')}:${repayment.date.minute.toString().padLeft(2, '0')}';
                         final dateStr =
@@ -1128,48 +1313,87 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                             repayment.note!.isNotEmpty;
 
                         return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          padding: const EdgeInsets.symmetric(vertical: 4),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.check_circle_outline,
-                                          size: 16, color: Colors.green),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        '+ ${repayment.amount.toStringAsFixed(2)} ETB',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.green,
-                                          fontSize: 15,
+                                  const Icon(Icons.check_circle_outline,
+                                      size: 16, color: Colors.green),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              '+ ${repayment.amount.toStringAsFixed(2)} ETB',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.green,
+                                                fontSize: 15,
+                                              ),
+                                            ),
+                                            Text(
+                                              dateStr,
+                                              style: const TextStyle(
+                                                  color: Colors.grey,
+                                                  fontSize: 11),
+                                            ),
+                                          ],
                                         ),
-                                      ),
-                                    ],
+                                        if (hasNote)
+                                          Text(
+                                            'ማስታወሻ: ${repayment.note}',
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey[700],
+                                                fontStyle: FontStyle.italic),
+                                          ),
+                                      ],
+                                    ),
                                   ),
-                                  Text(
-                                    dateStr,
-                                    style: const TextStyle(
-                                        color: Colors.grey, fontSize: 12),
+                                  // Edit button
+                                  SizedBox(
+                                    width: 30,
+                                    height: 30,
+                                    child: IconButton(
+                                      padding: EdgeInsets.zero,
+                                      icon: const Icon(
+                                          Icons.edit_outlined,
+                                          size: 16,
+                                          color: Colors.blue),
+                                      tooltip: 'ክፍያ አስተካክል',
+                                      onPressed: _isLoading
+                                          ? null
+                                          : () => _showEditRepaymentDialog(
+                                              debtor, idx, repayment),
+                                    ),
+                                  ),
+                                  // Delete button
+                                  SizedBox(
+                                    width: 30,
+                                    height: 30,
+                                    child: IconButton(
+                                      padding: EdgeInsets.zero,
+                                      icon: const Icon(
+                                          Icons.delete_outline,
+                                          size: 16,
+                                          color: Colors.red),
+                                      tooltip: 'ክፍያ ሰርዝ',
+                                      onPressed: _isLoading
+                                          ? null
+                                          : () => _confirmDeleteRepayment(
+                                              debtor, idx),
+                                    ),
                                   ),
                                 ],
                               ),
-                              if (hasNote)
-                                Padding(
-                                  padding: const EdgeInsets.only(
-                                      left: 22, top: 2),
-                                  child: Text(
-                                    'ማስታወሻ: ${repayment.note}',
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[700],
-                                        fontStyle: FontStyle.italic),
-                                  ),
-                                ),
                             ],
                           ),
                         );
