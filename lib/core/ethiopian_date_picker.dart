@@ -5,14 +5,24 @@ import 'ethiopian_date.dart';
 /// Allows shopkeepers to pick dates in Ethiopian Months & Years easily.
 class EthiopianDatePickerDialog extends StatefulWidget {
   final DateTime initialDate;
+  final String? title;
 
-  const EthiopianDatePickerDialog({super.key, required this.initialDate});
+  const EthiopianDatePickerDialog({
+    super.key,
+    required this.initialDate,
+    this.title,
+  });
 
-  static Future<DateTime?> show(BuildContext context, {DateTime? initialDate}) {
+  static Future<DateTime?> show(
+    BuildContext context, {
+    DateTime? initialDate,
+    String? title,
+  }) {
     return showDialog<DateTime>(
       context: context,
       builder: (ctx) => EthiopianDatePickerDialog(
         initialDate: initialDate ?? DateTime.now(),
+        title: title,
       ),
     );
   }
@@ -91,11 +101,12 @@ class _EthiopianDatePickerDialogState extends State<EthiopianDatePickerDialog> {
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: const Row(
+      title: Row(
         children: [
-          Icon(Icons.calendar_month, color: Color(0xFF10B981)),
-          SizedBox(width: 8),
-          Text('ቀን ይምረጡ (ዓ.ም)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Icon(Icons.calendar_month, color: Color(0xFF10B981)),
+          const SizedBox(width: 8),
+          Text(widget.title ?? 'ቀን ይምረጡ (ዓ.ም)',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         ],
       ),
       content: SingleChildScrollView(
