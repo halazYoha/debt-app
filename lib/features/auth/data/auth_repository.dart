@@ -37,4 +37,27 @@ class AuthRepository {
   Future<void> signOut() async {
     await _auth.signOut();
   }
+
+  /// Sends a password-reset email to [email].
+  /// Throws a localized [Exception] on failure.
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email.trim());
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'user-not-found':
+          throw Exception('ይህ ኢሜይል አልተመዘገበም። ኢሜይሉን ያረጋግጡ።');
+        case 'invalid-email':
+          throw Exception('ትክክለኛ ኢሜይል ያስገቡ።');
+        case 'too-many-requests':
+          throw Exception('ብዙ ሙከራ አድርገዋል። ትንሽ ቆይተው ደግሜ ሞክሩ።');
+        case 'network-request-failed':
+          throw Exception('ኢንተርኔት ግንኙነት የለም። ኔትወርክዎን ያረጋግጡ።');
+        default:
+          throw Exception('ስህተት ተከስቷል። ደግሜ ሞክሩ።');
+      }
+    } catch (_) {
+      throw Exception('ስህተት ተከስቷል። ደግሜ ሞክሩ።');
+    }
+  }
 }

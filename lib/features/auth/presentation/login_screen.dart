@@ -50,6 +50,155 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  void _showForgotPasswordDialog(BuildContext context) {
+    final dialogEmailController =
+        TextEditingController(text: _emailController.text.trim());
+    bool isSending = false;
+    String? dialogError;
+    String? dialogSuccess;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            Future<void> sendResetEmail() async {
+              final email = dialogEmailController.text.trim();
+              if (email.isEmpty) {
+                setDialogState(() {
+                  dialogError = 'ኢሜይልዎን ያስገቡ።';
+                  dialogSuccess = null;
+                });
+                return;
+              }
+
+              final emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+              if (!emailRegExp.hasMatch(email)) {
+                setDialogState(() {
+                  dialogError = 'ትክክለኛ ኢሜይል አድራሻ ያስገቡ።';
+                  dialogSuccess = null;
+                });
+                return;
+              }
+
+              setDialogState(() {
+                isSending = true;
+                dialogError = null;
+                dialogSuccess = null;
+              });
+
+              try {
+                final authRepo = ref.read(authRepositoryProvider);
+                await authRepo.sendPasswordResetEmail(email);
+                setDialogState(() {
+                  dialogSuccess =
+                      'የይለፍ ቃል መቀየሪያ ሊንክ ወደ $email ተልኳል!\n\n'
+                      '• ኢንቦክስዎን ወይም Spam/Junk ፎልደርዎን ይፈትሹ።\n'
+                      '• በኢሜይሉ የመጣውን ሊንክ ተጭነው አዲስ የይለፍ ቃል እስኪፈጥሩ ድረስ ነባሩ የይለፍ ቃል አይቀየርም።';
+                  isSending = false;
+                });
+              } catch (e) {
+                setDialogState(() {
+                  dialogError = e
+                      .toString()
+                      .replaceAll('Exception: ', '')
+                      .replaceAll(RegExp(r'^\[.*?\] '), '');
+                  isSending = false;
+                });
+              }
+            }
+
+            return AlertDialog(
+              title: const Text('የይለፍ ቃል ዳግም ማስጀመር'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (dialogSuccess != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                              color: Colors.green.withValues(alpha: 0.4)),
+                        ),
+                        child: Text(
+                          dialogSuccess!,
+                          style:
+                              const TextStyle(color: Colors.green, fontSize: 13, height: 1.4),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (dialogError != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .error
+                              .withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .error
+                                  .withValues(alpha: 0.4)),
+                        ),
+                        child: Text(
+                          dialogError!,
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                              fontSize: 13),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    TextFormField(
+                      controller: dialogEmailController,
+                      decoration: const InputDecoration(
+                        labelText: 'ኢሜይልዎን ያስገቡ',
+                        prefixIcon: Icon(Icons.email_outlined),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      enabled: !isSending,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed:
+                      isSending ? null : () => Navigator.of(dialogContext).pop(),
+                  child: const Text('ሰርዝ'),
+                ),
+                ElevatedButton(
+                  onPressed: isSending ? null : sendResetEmail,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: isSending
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('ኢሜይል ላክ'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -149,7 +298,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 28),
+                if (_isLogin) ...[
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => _showForgotPasswordDialog(context),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text(
+                        'የይለፍ ቃሉን ረስተዋል?',
+                        style: TextStyle(
+                          color: Color(0xFF10B981),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 24),
 
                 // ── Primary button ────────────────────────────────────────────
                 ElevatedButton(
