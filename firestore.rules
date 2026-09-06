@@ -1,0 +1,22 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users collection and all nested subcollections (e.g. debtors)
+    match /users/{userId} {
+      // Allow user full read/write access to their own account document
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // Allow user full read/write access to all subcollections under their user ID
+      match /{allPaths=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Default rule: block all read/write to any other unlisted collection
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
