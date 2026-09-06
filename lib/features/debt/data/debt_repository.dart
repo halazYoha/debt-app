@@ -57,4 +57,8 @@ class DebtRepository {
   Future<void> deleteDebtor(String id) async {
     await _debtorsRef.doc(id).delete();
   }
+
+  Future<void> keepDebtorRecord(String id) async {
+    await _debtorsRef.doc(id).update({'keepRecord': true});
+  }
 }

@@ -293,121 +293,203 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   
                                   return Card(
                                     margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                                    child: ListTile(
-                                      leading: CircleAvatar(
-                                        backgroundColor: isSettled
-                                            ? Colors.green.withValues(alpha: 0.2)
-                                            : Colors.orange.withValues(alpha: 0.2),
-                                        child: Text(
-                                          debtor.name.isNotEmpty ? debtor.name[0].toUpperCase() : '?',
-                                          style: TextStyle(
-                                            color: isSettled ? Colors.green : Colors.orange,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                      title: Text(debtor.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                      subtitle: Text(
-                                        hasPhone
-                                            ? '${debtor.phone} · ${EthiopianDate.formatShort(debtor.borrowedDate)}'
-                                            : EthiopianDate.formatShort(debtor.borrowedDate),
-                                        style: const TextStyle(fontSize: 12),
-                                      ),
-                                      trailing: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          IconButton(
-                                            icon: Icon(
-                                              Icons.call,
-                                              color: hasPhone ? const Color(0xFF10B981) : Colors.grey.shade400,
-                                              size: 22,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        ListTile(
+                                          leading: CircleAvatar(
+                                            backgroundColor: isSettled
+                                                ? Colors.green.withValues(alpha: 0.2)
+                                                : Colors.orange.withValues(alpha: 0.2),
+                                            child: Text(
+                                              debtor.name.isNotEmpty ? debtor.name[0].toUpperCase() : '?',
+                                              style: TextStyle(
+                                                color: isSettled ? Colors.green : Colors.orange,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
-                                            tooltip: hasPhone ? 'ደውል (${debtor.phone})' : 'ስልክ ቁጥር አልተመዘገበም',
-                                            onPressed: () => _makePhoneCall(context, debtor.phone),
                                           ),
-                                          const SizedBox(width: 4),
-                                          Column(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                          title: Text(debtor.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                          subtitle: Text(
+                                            hasPhone
+                                                ? '${debtor.phone} · ${EthiopianDate.formatShort(debtor.borrowedDate)}'
+                                                : EthiopianDate.formatShort(debtor.borrowedDate),
+                                            style: const TextStyle(fontSize: 12),
+                                          ),
+                                          trailing: Row(
+                                            mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Text(
-                                                '${debtor.remainingBalance.toStringAsFixed(2)} ETB',
-                                                style: TextStyle(
-                                                  color: isSettled ? Colors.green : Colors.red,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 15,
+                                              IconButton(
+                                                icon: Icon(
+                                                  Icons.call,
+                                                  color: hasPhone ? const Color(0xFF10B981) : Colors.grey.shade400,
+                                                  size: 22,
                                                 ),
+                                                tooltip: hasPhone ? 'ደውል (${debtor.phone})' : 'ስልክ ቁጥር አልተመዘገበም',
+                                                onPressed: () => _makePhoneCall(context, debtor.phone),
                                               ),
-                                              Text(
-                                                isSettled ? 'ተከፍሏል' : 'ይቀራል',
-                                                style: TextStyle(
-                                                  color: isSettled ? Colors.green : Colors.grey,
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          if (isSettled) ...[
-                                            const SizedBox(width: 4),
-                                            IconButton(
-                                              icon: const Icon(Icons.delete_outline,
-                                                  color: Colors.red, size: 22),
-                                              tooltip: 'መዝገብ ሰርዝ',
-                                              onPressed: () async {
-                                                final confirm = await showDialog<bool>(
-                                                  context: context,
-                                                  builder: (ctx) => AlertDialog(
-                                                    shape: RoundedRectangleBorder(
-                                                        borderRadius:
-                                                            BorderRadius.circular(20)),
-                                                    title: const Row(
-                                                      children: [
-                                                        Icon(Icons.delete_forever,
-                                                            color: Colors.red),
-                                                        SizedBox(width: 8),
-                                                        Text('መዝገብ መሰረዝ'),
-                                                      ],
+                                              const SizedBox(width: 4),
+                                              Column(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                crossAxisAlignment: CrossAxisAlignment.end,
+                                                children: [
+                                                  Text(
+                                                    '${debtor.remainingBalance.toStringAsFixed(2)} ETB',
+                                                    style: TextStyle(
+                                                      color: isSettled ? Colors.green : Colors.red,
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 15,
                                                     ),
-                                                    content: Text(
-                                                        '${debtor.name} የተከፈለ መዝገብ ከአሁኑ በቋሚነት መሰረዝ ይፈልጋሉ?'),
-                                                    actions: [
-                                                      TextButton(
-                                                        onPressed: () =>
-                                                            Navigator.pop(ctx, false),
-                                                        child: const Text('ሰርዝ'),
-                                                      ),
-                                                      ElevatedButton(
-                                                        onPressed: () =>
-                                                            Navigator.pop(ctx, true),
-                                                        style: ElevatedButton.styleFrom(
-                                                            backgroundColor: Colors.red),
-                                                        child: const Text('አዎ፣ ሰርዝ'),
-                                                      ),
-                                                    ],
                                                   ),
-                                                );
-                                                if (confirm == true) {
-                                                  await ref
-                                                      .read(debtRepositoryProvider)
-                                                      .deleteDebtor(debtor.id);
-                                                  if (context.mounted) {
-                                                    ScaffoldMessenger.of(context)
-                                                        .showSnackBar(
-                                                      const SnackBar(
-                                                        content: Text('መዝገብ ተሰርዟል! 🗑️'),
-                                                        backgroundColor: Colors.red,
+                                                  Text(
+                                                    isSettled ? 'ተከፍሏል' : 'ይቀራል',
+                                                    style: TextStyle(
+                                                      color: isSettled ? Colors.green : Colors.grey,
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              if (isSettled) ...[
+                                                const SizedBox(width: 4),
+                                                IconButton(
+                                                  icon: const Icon(Icons.delete_outline,
+                                                      color: Colors.red, size: 22),
+                                                  tooltip: 'መዝገብ ሰርዝ',
+                                                  onPressed: () async {
+                                                    final confirm = await showDialog<bool>(
+                                                      context: context,
+                                                      builder: (ctx) => AlertDialog(
+                                                        shape: RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(20)),
+                                                        title: const Row(
+                                                          children: [
+                                                            Icon(Icons.delete_forever,
+                                                                color: Colors.red),
+                                                            SizedBox(width: 8),
+                                                            Text('መዝገብ መሰረዝ'),
+                                                          ],
+                                                        ),
+                                                        content: Text(
+                                                            '${debtor.name} የተከፈለ መዝገብ ከአሁኑ በቋሚነት መሰረዝ ይፈልጋሉ?'),
+                                                        actions: [
+                                                          TextButton(
+                                                            onPressed: () =>
+                                                                Navigator.pop(ctx, false),
+                                                            child: const Text('ሰርዝ'),
+                                                          ),
+                                                          ElevatedButton(
+                                                            onPressed: () =>
+                                                                Navigator.pop(ctx, true),
+                                                            style: ElevatedButton.styleFrom(
+                                                                backgroundColor: Colors.red),
+                                                            child: const Text('አዎ፣ ሰርዝ'),
+                                                          ),
+                                                        ],
                                                       ),
                                                     );
-                                                  }
-                                                }
-                                              },
+                                                    if (confirm == true) {
+                                                      await ref
+                                                          .read(debtRepositoryProvider)
+                                                          .deleteDebtor(debtor.id);
+                                                      if (context.mounted) {
+                                                        ScaffoldMessenger.of(context)
+                                                            .showSnackBar(
+                                                          const SnackBar(
+                                                            content: Text('መዝገብ ተሰርዟል! 🗑️'),
+                                                            backgroundColor: Colors.red,
+                                                          ),
+                                                        );
+                                                      }
+                                                    }
+                                                  },
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                          onTap: () {
+                                            context.push('/debtor/${debtor.id}', extra: debtor);
+                                          },
+                                        ),
+                                        if (debtor.isWarningAutoDelete)
+                                          Container(
+                                            margin: const EdgeInsets.only(left: 16, right: 16, bottom: 10),
+                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                            decoration: BoxDecoration(
+                                              color: Colors.amber.withValues(alpha: 0.15),
+                                              borderRadius: BorderRadius.circular(10),
+                                              border: Border.all(
+                                                  color: Colors.amber.shade700.withValues(alpha: 0.4)),
                                             ),
-                                          ],
-                                        ],
-                                      ),
-                                      onTap: () {
-                                        context.push('/debtor/${debtor.id}', extra: debtor);
-                                      },
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.warning_amber_rounded,
+                                                    size: 20, color: Colors.amber.shade900),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    '⚠️ ከ ${debtor.daysUntilDelete} ቀን በኋላ ይሰረዛል',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Colors.amber.shade900,
+                                                    ),
+                                                  ),
+                                                ),
+                                                ElevatedButton(
+                                                  onPressed: () async {
+                                                    await ref
+                                                        .read(debtRepositoryProvider)
+                                                        .keepDebtorRecord(debtor.id);
+                                                    if (context.mounted) {
+                                                      ScaffoldMessenger.of(context)
+                                                          .showSnackBar(
+                                                        const SnackBar(
+                                                          content: Text('መዝገቡ በቋሚነት እንዳይሰረዝ ተደረገ። 📌'),
+                                                          backgroundColor: Colors.green,
+                                                        ),
+                                                      );
+                                                    }
+                                                  },
+                                                  style: ElevatedButton.styleFrom(
+                                                    padding: const EdgeInsets.symmetric(
+                                                        horizontal: 12, vertical: 6),
+                                                    minimumSize: Size.zero,
+                                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                                    backgroundColor: Colors.amber.shade700,
+                                                    foregroundColor: Colors.white,
+                                                    elevation: 0,
+                                                    shape: RoundedRectangleBorder(
+                                                        borderRadius: BorderRadius.circular(8)),
+                                                  ),
+                                                  child: const Text('አቆይ',
+                                                      style: TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight: FontWeight.bold)),
+                                                ),
+                                              ],
+                                            ),
+                                          )
+                                        else if (debtor.keepRecord && isSettled)
+                                          Padding(
+                                            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: const [
+                                                Icon(Icons.bookmark_added, size: 15, color: Colors.green),
+                                                SizedBox(width: 4),
+                                                Text(
+                                                  'መዝገቡ በቋሚነት ተጠብቋል',
+                                                  style: TextStyle(
+                                                      fontSize: 11,
+                                                      color: Colors.green,
+                                                      fontWeight: FontWeight.w500),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                      ],
                                     ),
                                   );
                                 },

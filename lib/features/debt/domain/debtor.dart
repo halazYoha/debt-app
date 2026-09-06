@@ -78,6 +78,7 @@ class Debtor {
   final DateTime borrowedDate;
   final DateTime lastTransactionDate;
   final DateTime? settledDate;  // set when fully paid — used for auto-delete after 30 days
+  final bool keepRecord;        // if true, record is protected from auto-deletion
 
   Debtor({
     required this.id,
@@ -89,6 +90,7 @@ class Debtor {
     required this.borrowedDate,
     required this.lastTransactionDate,
     this.settledDate,
+    this.keepRecord = false,
   });
 
   /// Total borrowed is derived from the item list
@@ -100,9 +102,23 @@ class Debtor {
   /// Human-readable summary of items, e.g. "1 kg Sugar, 3 kg Coffee"
   String get itemsSummary => items.map((i) => '${i.quantity} ${i.unit} ${i.name}').join(', ');
 
-  /// Whether this record should be auto-removed (settled > 30 days ago)
+  /// Days remaining until auto-delete (0 to 30), or null if not settled or protected
+  int? get daysUntilDelete {
+    if (!isFullyPaid || settledDate == null || keepRecord) return null;
+    final daysSinceSettled = DateTime.now().difference(settledDate!).inDays;
+    return (30 - daysSinceSettled).clamp(0, 30);
+  }
+
+  /// Whether this record is within 5 days of auto-deletion (settled 25 to 30 days ago)
+  bool get isWarningAutoDelete {
+    if (!isFullyPaid || settledDate == null || keepRecord) return false;
+    final remaining = daysUntilDelete;
+    return remaining != null && remaining <= 5 && remaining > 0;
+  }
+
+  /// Whether this record should be auto-removed (settled >= 30 days ago and not kept)
   bool get shouldAutoDelete {
-    if (!isFullyPaid || settledDate == null) return false;
+    if (!isFullyPaid || settledDate == null || keepRecord) return false;
     final daysSinceSettled = DateTime.now().difference(settledDate!).inDays;
     return daysSinceSettled >= 30;
   }
@@ -168,6 +184,7 @@ class Debtor {
       borrowedDate: (data['borrowedDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       lastTransactionDate: lastTxDate,
       settledDate: (data['settledDate'] as Timestamp?)?.toDate(),
+      keepRecord: data['keepRecord'] ?? false,
     );
   }
 
@@ -182,6 +199,7 @@ class Debtor {
       'borrowedDate': Timestamp.fromDate(borrowedDate),
       'lastTransactionDate': Timestamp.fromDate(lastTransactionDate),
       if (settledDate != null) 'settledDate': Timestamp.fromDate(settledDate!),
+      'keepRecord': keepRecord,
     };
   }
 }

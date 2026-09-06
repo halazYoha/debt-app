@@ -630,7 +630,73 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                                 color: Colors.green,
                                 fontWeight: FontWeight.bold)),
                       ),
-                      if (daysUntilDelete != null) ...[
+                      if (debtor.isWarningAutoDelete) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                                color: Colors.amber.shade700
+                                    .withValues(alpha: 0.4)),
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.warning_amber_rounded,
+                                      color: Colors.amber.shade900),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      '⚠️ ይህ መዝገብ ከ ${debtor.daysUntilDelete} ቀን በኋላ በራስ-ሰር ይሰረዛል። መዝገቡ በቋሚነት እንዲቆይ ይፈልጋሉ?',
+                                      style: TextStyle(
+                                        color: Colors.amber.shade900,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              ElevatedButton.icon(
+                                onPressed: () async {
+                                  await ref
+                                      .read(debtRepositoryProvider)
+                                      .keepDebtorRecord(debtor.id);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'መዝገቡ በቋሚነት እንዳይሰረዝ ተደረገ። 📌'),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                    Navigator.pop(context);
+                                  }
+                                },
+                                icon: const Icon(Icons.bookmark_add, size: 18),
+                                label: const Text('መዝገቡን አቆይ'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.amber.shade700,
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ] else if (debtor.keepRecord) ...[
+                        const SizedBox(height: 8),
+                        const Text(
+                          '📌 መዝገቡ በቋሚነት ተጠብቋል',
+                          style: TextStyle(
+                              color: Colors.green,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ] else if (daysUntilDelete != null) ...[
                         const SizedBox(height: 8),
                         Text(
                           daysUntilDelete == 0
