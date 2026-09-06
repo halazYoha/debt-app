@@ -5,6 +5,7 @@ import '../../../core/app_error_mapper.dart';
 import '../../../core/ethiopian_date.dart';
 import '../../../core/ethiopian_date_picker.dart';
 import '../../../core/input_validators.dart';
+import '../../../core/offline_banner.dart';
 import '../domain/debtor.dart';
 import '../data/debt_repository.dart';
 
@@ -867,7 +868,8 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
+      body: OfflineAwareScaffoldBody(
+        child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1519,6 +1521,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
             const SizedBox(height: 20),
           ],
         ),
+      ),
       ),
     );
   }

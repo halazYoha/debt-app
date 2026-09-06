@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../debt/data/debt_repository.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../../core/ethiopian_date.dart';
+import '../../../core/offline_banner.dart';
 
 enum DebtorFilter { all, over50k }
 
@@ -92,7 +93,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             return debtor.name.toLowerCase().contains(query) || debtor.phone.contains(query);
           }).toList();
           
-          return Column(
+          return OfflineAwareScaffoldBody(
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Header Card ──────────────────────────────────────────────
@@ -496,6 +498,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               ),
               ),
             ],
+          ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
