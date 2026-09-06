@@ -1617,86 +1617,102 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                             repayment.note!.isNotEmpty;
 
                         return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Column(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.check_circle_outline,
-                                      size: 16, color: Colors.green),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                              const Padding(
+                                padding: EdgeInsets.only(top: 2),
+                                child: Icon(Icons.check_circle_outline,
+                                    size: 16, color: Colors.green),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                flex: 5,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '+ ${repayment.amount.toStringAsFixed(2)} ETB',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.green,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    if (hasNote) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'ማስታወሻ: ${repayment.note}',
+                                        style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey[700],
+                                            fontStyle: FontStyle.italic),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              Expanded(
+                                flex: 5,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              '+ ${repayment.amount.toStringAsFixed(2)} ETB',
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.green,
-                                                fontSize: 15,
-                                              ),
-                                            ),
-                                            Text(
-                                              dateStr,
-                                              style: const TextStyle(
-                                                  color: Colors.grey,
-                                                  fontSize: 11),
-                                            ),
-                                          ],
-                                        ),
-                                        if (hasNote)
-                                          Text(
-                                            'ማስታወሻ: ${repayment.note}',
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey[700],
-                                                fontStyle: FontStyle.italic),
+                                        const Icon(Icons.calendar_today,
+                                            size: 11, color: Colors.grey),
+                                        const SizedBox(width: 4),
+                                        Flexible(
+                                          child: Text(
+                                            dateStr,
+                                            style: const TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 11),
+                                            overflow: TextOverflow.ellipsis,
                                           ),
+                                        ),
                                       ],
                                     ),
-                                  ),
-                                  // Edit button
-                                  SizedBox(
-                                    width: 30,
-                                    height: 30,
-                                    child: IconButton(
-                                      padding: EdgeInsets.zero,
-                                      icon: const Icon(
-                                          Icons.edit_outlined,
-                                          size: 16,
-                                          color: Colors.blue),
-                                      tooltip: 'ክፍያ አስተካክል',
-                                      onPressed: _isLoading
-                                          ? null
-                                          : () => _showEditRepaymentDialog(
-                                              debtor, idx, repayment),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        InkWell(
+                                          onTap: _isLoading
+                                              ? null
+                                              : () => _showEditRepaymentDialog(
+                                                  debtor, idx, repayment),
+                                          borderRadius: BorderRadius.circular(4),
+                                          child: const Padding(
+                                            padding: EdgeInsets.all(4.0),
+                                            child: Icon(
+                                                Icons.edit_outlined,
+                                                size: 16,
+                                                color: Colors.blue),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        InkWell(
+                                          onTap: _isLoading
+                                              ? null
+                                              : () => _confirmDeleteRepayment(
+                                                  debtor, idx),
+                                          borderRadius: BorderRadius.circular(4),
+                                          child: const Padding(
+                                            padding: EdgeInsets.all(4.0),
+                                            child: Icon(
+                                                Icons.delete_outline,
+                                                size: 16,
+                                                color: Colors.red),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                  // Delete button
-                                  SizedBox(
-                                    width: 30,
-                                    height: 30,
-                                    child: IconButton(
-                                      padding: EdgeInsets.zero,
-                                      icon: const Icon(
-                                          Icons.delete_outline,
-                                          size: 16,
-                                          color: Colors.red),
-                                      tooltip: 'ክፍያ ሰርዝ',
-                                      onPressed: _isLoading
-                                          ? null
-                                          : () => _confirmDeleteRepayment(
-                                              debtor, idx),
-                                    ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ],
                           ),
