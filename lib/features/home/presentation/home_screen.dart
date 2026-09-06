@@ -18,6 +18,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _searchQuery = '';
   DebtorFilter _selectedFilter = DebtorFilter.all;
+  bool _amountVisible = true;
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -103,17 +104,51 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     padding: const EdgeInsets.all(20.0),
                     child: Column(
                       children: [
-                        const Text(
-                          'ጠቅላላ ያልተከፈለ ዕዳ',
-                          style: TextStyle(color: Colors.white70, fontSize: 15),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              'ጠቅላላ ያልተከፈለ ዕዳ',
+                              style: TextStyle(color: Colors.white70, fontSize: 15),
+                            ),
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () => setState(() => _amountVisible = !_amountVisible),
+                              child: AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 200),
+                                child: Icon(
+                                  _amountVisible ? Icons.visibility : Icons.visibility_off,
+                                  key: ValueKey(_amountVisible),
+                                  color: Colors.white54,
+                                  size: 18,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 6),
-                        Text(
-                          '${totalOwed.toStringAsFixed(2)} ETB',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 30,
-                            fontWeight: FontWeight.bold,
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          transitionBuilder: (child, animation) => FadeTransition(
+                            opacity: animation,
+                            child: SlideTransition(
+                              position: Tween<Offset>(
+                                begin: const Offset(0, 0.2),
+                                end: Offset.zero,
+                              ).animate(animation),
+                              child: child,
+                            ),
+                          ),
+                          child: Text(
+                            _amountVisible
+                                ? '${totalOwed.toStringAsFixed(2)} ETB'
+                                : '•••••• ETB',
+                            key: ValueKey(_amountVisible),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 30,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
