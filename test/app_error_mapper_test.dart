@@ -38,7 +38,16 @@ void main() {
       );
       expect(
         AppErrorMapper.toAmharic(networkEx),
-        'የኢንተርኔት ግንኙነት የለም። ኔትወርክዎን ያረጋግጡ።',
+        'የኢንተርኔት ግንኙነት የለም። ለመግባት እባክዎ የኢንተርኔት ግንኙነትዎን አበሩት/ያረጋግጡና ደግመው ይሞክሩ። 📶',
+      );
+
+      final channelEx = FirebaseAuthException(
+        code: 'channel-error',
+        message: 'Unable to establish connection on channel',
+      );
+      expect(
+        AppErrorMapper.toAmharic(channelEx),
+        'የኢንተርኔት ግንኙነት የለም። ለመግባት እባክዎ የኢንተርኔት ግንኙነትዎን አበሩት/ያረጋግጡና ደግመው ይሞክሩ። 📶',
       );
     });
 
@@ -65,6 +74,12 @@ void main() {
     });
 
     test('String and Exception fallback mapping', () {
+      final socketEx = Exception("ClientException with SocketException: Failed host lookup: 'identitytoolkit.googleapis.com'");
+      expect(
+        AppErrorMapper.toAmharic(socketEx),
+        'የኢንተርኔት ግንኙነት የለም። ለመግባት እባክዎ የኢንተርኔት ግንኙነትዎን አበሩት/ያረጋግጡና ደግመው ይሞክሩ። 📶',
+      );
+
       final genericEx = Exception('Something bad happened in English');
       expect(
         AppErrorMapper.toAmharic(genericEx),

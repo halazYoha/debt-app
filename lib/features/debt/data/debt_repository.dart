@@ -65,7 +65,11 @@ class DebtRepository {
 
   Future<void> addDebtor(Debtor debtor) async {
     try {
-      await _debtorsRef.add(debtor.toFirestore());
+      final docRef = debtor.id.isNotEmpty ? _debtorsRef.doc(debtor.id) : _debtorsRef.doc();
+      await docRef.set(debtor.toFirestore()).timeout(
+            const Duration(milliseconds: 300),
+            onTimeout: () {},
+          );
     } catch (e) {
       throw Exception(AppErrorMapper.toAmharic(e));
     }
@@ -73,7 +77,10 @@ class DebtRepository {
 
   Future<void> updateDebtor(Debtor debtor) async {
     try {
-      await _debtorsRef.doc(debtor.id).update(debtor.toFirestore());
+      await _debtorsRef.doc(debtor.id).update(debtor.toFirestore()).timeout(
+            const Duration(milliseconds: 300),
+            onTimeout: () {},
+          );
     } catch (e) {
       throw Exception(AppErrorMapper.toAmharic(e));
     }
@@ -81,7 +88,10 @@ class DebtRepository {
 
   Future<void> deleteDebtor(String id) async {
     try {
-      await _debtorsRef.doc(id).delete();
+      await _debtorsRef.doc(id).delete().timeout(
+            const Duration(milliseconds: 300),
+            onTimeout: () {},
+          );
     } catch (e) {
       throw Exception(AppErrorMapper.toAmharic(e));
     }
@@ -89,7 +99,10 @@ class DebtRepository {
 
   Future<void> keepDebtorRecord(String id) async {
     try {
-      await _debtorsRef.doc(id).update({'keepRecord': true});
+      await _debtorsRef.doc(id).update({'keepRecord': true}).timeout(
+            const Duration(milliseconds: 300),
+            onTimeout: () {},
+          );
     } catch (e) {
       throw Exception(AppErrorMapper.toAmharic(e));
     }
@@ -100,7 +113,10 @@ class DebtRepository {
       await _debtorsRef.doc(id).update({
         'name': name.trim(),
         'phone': phone.trim(),
-      });
+      }).timeout(
+            const Duration(milliseconds: 300),
+            onTimeout: () {},
+          );
     } catch (e) {
       throw Exception(AppErrorMapper.toAmharic(e));
     }
@@ -125,7 +141,10 @@ class DebtRepository {
         settledDate: isNowUnpaid ? null : debtor.settledDate,
         keepRecord: debtor.keepRecord,
       );
-      await _debtorsRef.doc(debtor.id).update(updated.toFirestore());
+      await _debtorsRef.doc(debtor.id).update(updated.toFirestore()).timeout(
+            const Duration(milliseconds: 300),
+            onTimeout: () {},
+          );
     } catch (e) {
       throw Exception(AppErrorMapper.toAmharic(e));
     }
@@ -159,7 +178,10 @@ class DebtRepository {
             : (debtor.settledDate ?? DateTime.now()),
         keepRecord: debtor.keepRecord,
       );
-      await _debtorsRef.doc(debtor.id).update(updated.toFirestore());
+      await _debtorsRef.doc(debtor.id).update(updated.toFirestore()).timeout(
+            const Duration(milliseconds: 300),
+            onTimeout: () {},
+          );
     } catch (e) {
       throw Exception(AppErrorMapper.toAmharic(e));
     }

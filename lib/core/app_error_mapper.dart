@@ -1,6 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AppErrorMapper {
+  static const String _networkErrorMessage =
+      'የኢንተርኔት ግንኙነት የለም። ለመግባት እባክዎ የኢንተርኔት ግንኙነትዎን አበሩት/ያረጋግጡና ደግመው ይሞክሩ። 📶';
+
   /// Converts any exception into a user-friendly, localized Amharic error string.
   static String toAmharic(dynamic error) {
     if (error == null) return 'ስህተት ተከስቷል። እባክዎ ደግመው ይሞክሩ።';
@@ -31,7 +34,12 @@ class AppErrorMapper {
         case 'too-many-requests':
           return 'ብዙ የተሳሳቱ ሙከራዎች አድርገዋል። ትንሽ ቆይተው ደግመው ይሞክሩ።';
         case 'network-request-failed':
-          return 'የኢንተርኔት ግንኙነት የለም። ኔትወርክዎን ያረጋግጡ።';
+        case 'unavailable':
+        case 'channel-error':
+        case 'internal-error':
+        case 'network-error':
+        case 'unknown':
+          return _networkErrorMessage;
         case 'operation-not-allowed':
           return 'ይህ አገልግሎት ለጊዜው አልተፈቀደም።';
         case 'requires-recent-login':
@@ -63,12 +71,28 @@ class AppErrorMapper {
       }
     }
 
-    // 4. String error processing
-    final errorString = error.toString();
+    // 4. String / Exception lower-case pattern detection
+    final errorString = error.toString().toLowerCase();
+
     if (errorString.contains('network-request-failed') ||
-        errorString.contains('SocketException') ||
-        errorString.contains('Failed host lookup')) {
-      return 'የኢንተርኔት ግንኙነት የለም። ኔትወርክዎን ያረጋግጡ።';
+        errorString.contains('channel-error') ||
+        errorString.contains('internal-error') ||
+        errorString.contains('socketexception') ||
+        errorString.contains('failed host lookup') ||
+        errorString.contains('identitytoolkit') ||
+        errorString.contains('connection failed') ||
+        errorString.contains('connection refused') ||
+        errorString.contains('network error') ||
+        errorString.contains('offline') ||
+        errorString.contains('unreachable') ||
+        errorString.contains('timed out') ||
+        errorString.contains('timeout') ||
+        errorString.contains('xmlhttprequest') ||
+        errorString.contains('getaddrinfo') ||
+        errorString.contains('clientexception') ||
+        errorString.contains('handshakeexception') ||
+        errorString.contains('no address associated')) {
+      return _networkErrorMessage;
     }
 
     if (errorString.contains('user-not-found') ||
@@ -93,8 +117,9 @@ class AppErrorMapper {
       return 'ይህን እርምጃ ለመፈጸም ፈቃድ የለዎትም።';
     }
 
-    if (_isAmharicText(errorString)) {
-      return errorString
+    final rawText = error.toString();
+    if (_isAmharicText(rawText)) {
+      return rawText
           .replaceAll('Exception: ', '')
           .replaceAll(RegExp(r'^\[.*?\] '), '')
           .trim();

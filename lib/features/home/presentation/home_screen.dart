@@ -19,7 +19,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _searchQuery = '';
   DebtorFilter _selectedFilter = DebtorFilter.all;
-  bool _amountVisible = true;
+  bool _amountVisible = false;
   final TextEditingController _searchController = TextEditingController();
 
   @override

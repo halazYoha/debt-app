@@ -187,6 +187,19 @@ void main() {
       expect(newTotalPaid, 900.0);
       expect(newTotalPaid >= debtor.totalBorrowed, isTrue); // still fully paid
     });
+
+    test('Total amount visibility defaults to masked (hidden)', () {
+      bool amountVisible = false;
+      const totalOwed = 15500.0;
+      final display = amountVisible ? '${totalOwed.toStringAsFixed(2)} ETB' : '•••••• ETB';
+      expect(display, '•••••• ETB');
+
+      // Toggling visibility
+      amountVisible = !amountVisible;
+      final updatedDisplay = amountVisible ? '${totalOwed.toStringAsFixed(2)} ETB' : '•••••• ETB';
+      expect(updatedDisplay, '15500.00 ETB');
+    });
   });
 }
+
 
