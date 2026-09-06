@@ -37,8 +37,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'debtor/:id',
             builder: (context, state) {
-              final debtor = state.extra as Debtor;
-              return DebtorDetailScreen(debtor: debtor);
+              final debtorId = state.pathParameters['id']!;
+              final initialDebtor = state.extra as Debtor?;
+              return DebtorDetailScreen(
+                debtorId: debtorId,
+                initialDebtor: initialDebtor,
+              );
             },
           ),
         ],

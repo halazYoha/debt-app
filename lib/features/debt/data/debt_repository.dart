@@ -20,6 +20,15 @@ final debtorsProvider = StreamProvider<List<Debtor>>((ref) {
   return ref.watch(debtRepositoryProvider).watchDebtors();
 });
 
+final singleDebtorStreamProvider =
+    StreamProvider.family<Debtor?, String>((ref, debtorId) {
+  final user = ref.watch(authStateChangesProvider).value;
+  if (user == null) {
+    return Stream.value(null);
+  }
+  return ref.watch(debtRepositoryProvider).watchDebtor(debtorId);
+});
+
 class DebtRepository {
   final FirebaseFirestore _firestore;
   final String _userId;
@@ -28,6 +37,13 @@ class DebtRepository {
 
   CollectionReference get _debtorsRef =>
       _firestore.collection('users').doc(_userId).collection('debtors');
+
+  Stream<Debtor?> watchDebtor(String id) {
+    return _debtorsRef.doc(id).snapshots().map((doc) {
+      if (!doc.exists || doc.data() == null) return null;
+      return Debtor.fromFirestore(doc);
+    });
+  }
 
   Stream<List<Debtor>> watchDebtors() {
     return _debtorsRef

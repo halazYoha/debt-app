@@ -8,8 +8,14 @@ import '../domain/debtor.dart';
 import '../data/debt_repository.dart';
 
 class DebtorDetailScreen extends ConsumerStatefulWidget {
-  final Debtor debtor;
-  const DebtorDetailScreen({super.key, required this.debtor});
+  final String debtorId;
+  final Debtor? initialDebtor;
+
+  const DebtorDetailScreen({
+    super.key,
+    required this.debtorId,
+    this.initialDebtor,
+  });
 
   @override
   ConsumerState<DebtorDetailScreen> createState() =>
@@ -62,21 +68,22 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
 
 
   // ── Core: Add items to debtor debt ───────────────────────────────────────
-  Future<void> _addAdditionalItems(List<DebtItem> newItems) async {
+  Future<void> _addAdditionalItems(Debtor currentDebtor, List<DebtItem> newItems) async {
     if (newItems.isEmpty) return;
 
     setState(() => _isLoading = true);
     try {
       final updated = Debtor(
-        id: widget.debtor.id,
-        name: widget.debtor.name,
-        phone: widget.debtor.phone,
-        items: [...widget.debtor.items, ...newItems],
-        repayments: widget.debtor.repayments,
-        totalPaid: widget.debtor.totalPaid,
-        borrowedDate: widget.debtor.borrowedDate,
+        id: currentDebtor.id,
+        name: currentDebtor.name,
+        phone: currentDebtor.phone,
+        items: [...currentDebtor.items, ...newItems],
+        repayments: currentDebtor.repayments,
+        totalPaid: currentDebtor.totalPaid,
+        borrowedDate: currentDebtor.borrowedDate,
         lastTransactionDate: DateTime.now(),
         settledDate: null, // Reset settled status if debtor borrows again
+        keepRecord: currentDebtor.keepRecord,
       );
       await ref.read(debtRepositoryProvider).updateDebtor(updated);
       if (mounted) {
@@ -86,7 +93,6 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
             backgroundColor: Color(0xFF10B981),
           ),
         );
-        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
@@ -103,20 +109,20 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
   }
 
   // ── Dialog 1: Add borrowed items dialog ─────────────────────────────────
-  void _showAddItemsDialog() {
+  void _showAddItemsDialog(Debtor currentDebtor) {
     showDialog(
       context: context,
       builder: (dialogCtx) => _AddItemsDialog(
         onSave: (items) {
           Navigator.pop(dialogCtx);
-          _addAdditionalItems(items);
+          _addAdditionalItems(currentDebtor, items);
         },
       ),
     );
   }
 
   // ── Dialog 2: Add direct cash loan dialog ────────────────────────────────
-  void _showAddCashLoanDialog() {
+  void _showAddCashLoanDialog(Debtor currentDebtor) {
     _cashAmountController.clear();
     _cashNoteController.clear();
     DateTime selectedDate = DateTime.now();
@@ -245,7 +251,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                             date: selectedDate,
                           );
                           Navigator.pop(dialogContext);
-                          _addAdditionalItems([cashItem]);
+                          _addAdditionalItems(currentDebtor, [cashItem]);
                         },
                   style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFF59E0B)),
@@ -261,7 +267,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
 
   // ── Record partial payment ──────────────────────────────────────────────────
   Future<void> _recordPayment(
-      BuildContext dialogContext, double amount) async {
+      Debtor currentDebtor, BuildContext dialogContext, double amount) async {
     if (amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -270,7 +276,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
       );
       return;
     }
-    if (amount > widget.debtor.remainingBalance) {
+    if (amount > currentDebtor.remainingBalance) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('የተሰጠው መጠን ቀሪ ዕዳን አልፏል'),
@@ -282,25 +288,26 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
     setState(() => _isLoading = true);
     try {
       final now = DateTime.now();
-      final newTotalPaid = widget.debtor.totalPaid + amount;
-      final isNowSettled = newTotalPaid >= widget.debtor.totalBorrowed;
+      final newTotalPaid = currentDebtor.totalPaid + amount;
+      final isNowSettled = newTotalPaid >= currentDebtor.totalBorrowed;
       final newRepayment = RepaymentRecord(
         amount: amount,
         date: now,
         note: isNowSettled ? 'ከፊል/ሙሉ ክፍያ' : 'ከፊል ክፍያ',
       );
-      final updatedRepayments = [...widget.debtor.repayments, newRepayment];
+      final updatedRepayments = [...currentDebtor.repayments, newRepayment];
 
       final updated = Debtor(
-        id: widget.debtor.id,
-        name: widget.debtor.name,
-        phone: widget.debtor.phone,
-        items: widget.debtor.items,
+        id: currentDebtor.id,
+        name: currentDebtor.name,
+        phone: currentDebtor.phone,
+        items: currentDebtor.items,
         repayments: updatedRepayments,
         totalPaid: newTotalPaid,
-        borrowedDate: widget.debtor.borrowedDate,
+        borrowedDate: currentDebtor.borrowedDate,
         lastTransactionDate: now,
-        settledDate: isNowSettled ? now : widget.debtor.settledDate,
+        settledDate: isNowSettled ? now : currentDebtor.settledDate,
+        keepRecord: currentDebtor.keepRecord,
       );
       await ref.read(debtRepositoryProvider).updateDebtor(updated);
       if (mounted) {
@@ -310,7 +317,6 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
               content: Text('ክፍያ ተመዝግቧል! ✅'),
               backgroundColor: Color(0xFF10B981)),
         );
-        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
@@ -327,14 +333,14 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
   }
 
   // ── Mark fully paid ─────────────────────────────────────────────────────────
-  Future<void> _markFullyPaid() async {
+  Future<void> _markFullyPaid(Debtor currentDebtor) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('ሙሉ ዕዳ ተከፍሏል?'),
         content: Text(
-          '${widget.debtor.name} ጠቅላላ ዕዳ ${widget.debtor.totalBorrowed.toStringAsFixed(2)} ETB '
+          '${currentDebtor.name} ጠቅላላ ዕዳ ${currentDebtor.totalBorrowed.toStringAsFixed(2)} ETB '
           'ሙሉ በሙሉ ከፍሏል ብለው ለምልክት ያቅርቡ?\n\nከ30 ቀን በኋላ ከዝርዝሩ ይወጣሉ።',
         ),
         actions: [
@@ -356,9 +362,9 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
     setState(() => _isLoading = true);
     try {
       final now = DateTime.now();
-      final remaining = widget.debtor.remainingBalance;
+      final remaining = currentDebtor.remainingBalance;
       final updatedRepayments =
-          List<RepaymentRecord>.from(widget.debtor.repayments);
+          List<RepaymentRecord>.from(currentDebtor.repayments);
       if (remaining > 0) {
         updatedRepayments.add(
           RepaymentRecord(
@@ -369,15 +375,16 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
         );
       }
       final updated = Debtor(
-        id: widget.debtor.id,
-        name: widget.debtor.name,
-        phone: widget.debtor.phone,
-        items: widget.debtor.items,
+        id: currentDebtor.id,
+        name: currentDebtor.name,
+        phone: currentDebtor.phone,
+        items: currentDebtor.items,
         repayments: updatedRepayments,
-        totalPaid: widget.debtor.totalBorrowed, // fully paid
-        borrowedDate: widget.debtor.borrowedDate,
+        totalPaid: currentDebtor.totalBorrowed, // fully paid
+        borrowedDate: currentDebtor.borrowedDate,
         lastTransactionDate: now,
         settledDate: now, // ← triggers auto-delete after 30 days
+        keepRecord: currentDebtor.keepRecord,
       );
       await ref.read(debtRepositoryProvider).updateDebtor(updated);
       if (mounted) {
@@ -386,7 +393,6 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
               content: Text('ሙሉ ዕዳ ተከፍሏል! 🎉'),
               backgroundColor: Color(0xFF10B981)),
         );
-        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
@@ -403,7 +409,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
   }
 
   // ── Payment dialog ──────────────────────────────────────────────────────────
-  void _showPaymentDialog() {
+  void _showPaymentDialog(Debtor currentDebtor) {
     _amountController.clear();
     showDialog(
       context: context,
@@ -434,7 +440,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                     const Text('ቀሪ ዕዳ:',
                         style: TextStyle(color: Colors.red)),
                     Text(
-                      '${widget.debtor.remainingBalance.toStringAsFixed(2)} ETB',
+                      '${currentDebtor.remainingBalance.toStringAsFixed(2)} ETB',
                       style: const TextStyle(
                           color: Colors.red,
                           fontWeight: FontWeight.bold,
@@ -471,7 +477,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                   : () {
                       final amount =
                           double.tryParse(_amountController.text) ?? 0;
-                      _recordPayment(dialogContext, amount);
+                      _recordPayment(currentDebtor, dialogContext, amount);
                     },
               child: _isLoading
                   ? const SizedBox(
@@ -489,7 +495,17 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final debtor = widget.debtor;
+    final debtorAsync = ref.watch(singleDebtorStreamProvider(widget.debtorId));
+    final debtor = debtorAsync.value ?? widget.initialDebtor;
+
+    if (debtor == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('መዝገብ አልተገኘም')),
+        body: const Center(
+          child: Text('ይህ መዝገብ አልተገኘም ወይም ተሰርዟል።'),
+        ),
+      );
+    }
     final isSettled = debtor.isFullyPaid;
     final progress = debtor.totalBorrowed > 0
         ? (debtor.totalPaid / debtor.totalBorrowed).clamp(0.0, 1.0)
@@ -522,7 +538,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
           if (!isSettled)
             PopupMenuButton<String>(
               onSelected: (value) {
-                if (value == 'fully_paid') _markFullyPaid();
+                if (value == 'fully_paid') _markFullyPaid(debtor);
               },
               itemBuilder: (_) => [
                 const PopupMenuItem(
@@ -1061,7 +1077,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: _isLoading ? null : _showAddItemsDialog,
+                    onPressed: _isLoading ? null : () => _showAddItemsDialog(debtor),
                     icon: const Icon(Icons.add_shopping_cart, size: 18),
                     label: const Text('ዕቃ ብድር',
                         style: TextStyle(
@@ -1079,7 +1095,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: _isLoading ? null : _showAddCashLoanDialog,
+                    onPressed: _isLoading ? null : () => _showAddCashLoanDialog(debtor),
                     icon: const Icon(Icons.attach_money, size: 18),
                     label: const Text('ገንዘብ ብድር',
                         style: TextStyle(
@@ -1099,7 +1115,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
             const SizedBox(height: 12),
             if (!isSettled) ...[
               ElevatedButton.icon(
-                onPressed: _isLoading ? null : _showPaymentDialog,
+                onPressed: _isLoading ? null : () => _showPaymentDialog(debtor),
                 icon: const Icon(Icons.payment),
                 label: const Text('ክፍያ ምዝገባ',
                     style: TextStyle(
@@ -1112,7 +1128,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
               ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
-                onPressed: _isLoading ? null : _markFullyPaid,
+                onPressed: _isLoading ? null : () => _markFullyPaid(debtor),
                 icon: const Icon(Icons.check_circle_outline,
                     color: Colors.green),
                 label: const Text('ሙሉ ዕዳ ተከፍሏል ምልክት',
