@@ -790,6 +790,268 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
     }
   }
 
+  // ── Edit a borrowed item / cash loan ─────────────────────────────────────────
+  void _showEditDebtItemDialog(Debtor debtor, int itemIndex, DebtItem item) {
+    final nameController = TextEditingController(text: item.name);
+    final qtyController = TextEditingController(text: item.quantity.toString());
+    final unitController = TextEditingController(text: item.unit);
+    final priceController = TextEditingController(text: item.unitPrice.toString());
+    DateTime selectedDate = item.date ?? debtor.borrowedDate;
+    final formKey = GlobalKey<FormState>();
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            Future<void> save() async {
+              if (!formKey.currentState!.validate()) return;
+              setDialogState(() => isSaving = true);
+              final messenger = ScaffoldMessenger.of(context);
+              try {
+                final qty = double.tryParse(qtyController.text.trim()) ?? 1.0;
+                final price = double.tryParse(priceController.text.trim()) ?? 0.0;
+                final updatedItem = DebtItem(
+                  name: nameController.text.trim(),
+                  quantity: qty,
+                  unit: unitController.text.trim().isEmpty ? 'ብር' : unitController.text.trim(),
+                  unitPrice: price,
+                  date: selectedDate,
+                );
+
+                await ref
+                    .read(debtRepositoryProvider)
+                    .editDebtItem(debtor, itemIndex, updatedItem);
+
+                if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('የተበደረው ዕቃ/ገንዘብ ተስተካክሏል! ✏️'),
+                    backgroundColor: Color(0xFF10B981),
+                  ),
+                );
+              } catch (e) {
+                setDialogState(() => isSaving = false);
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text(AppErrorMapper.toAmharic(e)),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              title: const Row(
+                children: [
+                  Icon(Icons.edit_outlined, color: Color(0xFF10B981)),
+                  SizedBox(width: 8),
+                  Text('የተበደረውን ዕቃ/ገንዘብ አስተካክል'),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        controller: nameController,
+                        autofocus: true,
+                        decoration: InputDecoration(
+                          labelText: 'የዕቃው/ገንዘቡ ስም *',
+                          prefixIcon: const Icon(Icons.shopping_bag_outlined),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'እባክዎ ስም ያስገቡ';
+                          }
+                          return null;
+                        },
+                        enabled: !isSaving,
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: qtyController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              decoration: InputDecoration(
+                                labelText: 'ብዛት *',
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) return 'ብዛት ያስገቡ';
+                                final d = double.tryParse(v.trim());
+                                if (d == null || d <= 0) return 'ትክክለኛ ብዛት ያስገቡ';
+                                return null;
+                              },
+                              enabled: !isSaving,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextFormField(
+                              controller: unitController,
+                              decoration: InputDecoration(
+                                labelText: 'መለኪያ (ምሳሌ፡ ኪሎ/ብር)',
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
+                              enabled: !isSaving,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: priceController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: InputDecoration(
+                          labelText: 'ያንዱ ዋጋ / የገንዘብ መጠን (ETB) *',
+                          prefixIcon: const Icon(Icons.attach_money),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) return 'ዋጋ ያስገቡ';
+                          final d = double.tryParse(v.trim());
+                          if (d == null || d < 0) return 'ትክክለኛ ዋጋ ያስገቡ';
+                          return null;
+                        },
+                        enabled: !isSaving,
+                      ),
+                      const SizedBox(height: 12),
+                      InkWell(
+                        onTap: isSaving
+                            ? null
+                            : () async {
+                                final picked =
+                                    await EthiopianDatePickerDialog.show(
+                                  context,
+                                  initialDate: selectedDate,
+                                  title: 'የተበደረበትን ቀን ይምረጡ',
+                                );
+                                if (picked != null) {
+                                  setDialogState(() => selectedDate = picked);
+                                }
+                              },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 14),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.calendar_today, size: 20),
+                              const SizedBox(width: 10),
+                              Text(
+                                'ቀን፡ ${EthiopianDate.formatShort(selectedDate)}',
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSaving ? null : () => Navigator.pop(dialogCtx),
+                  child: const Text('ሰርዝ'),
+                ),
+                ElevatedButton(
+                  onPressed: isSaving ? null : save,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: isSaving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white))
+                      : const Text('አስቀምጥ'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ── Confirm and delete a borrowed item ──────────────────────────────────────
+  Future<void> _confirmDeleteDebtItem(Debtor debtor, int itemIndex, DebtItem item) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red),
+            SizedBox(width: 8),
+            Text('የተበደሩትን ዕቃ/ገንዘብ ሰርዝ'),
+          ],
+        ),
+        content: Text(
+          'ይህንን የተበደሩትን ዕቃ/ገንዘብ "${item.name}" (${item.subtotal.toStringAsFixed(2)} ETB) '
+          'እርግጠኛ ሆነው ማጥፋት ይፈልጋሉ?\n\n'
+          'ጠቅላላ የተበደረው ገንዘብ እና ቀሪ ዕዳ በራስ-ሰር እንደገና ይሰላል።',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('አይ'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text('አዎ፣ ሰርዝ'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+    setState(() => _isLoading = true);
+    try {
+      await ref.read(debtRepositoryProvider).deleteDebtItem(debtor, itemIndex);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('የተበደረው ዕቃ/ገንዘብ ተሰርዟል! 🗑️'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppErrorMapper.toAmharic(e)),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final debtorAsync = ref.watch(singleDebtorStreamProvider(widget.debtorId));
@@ -1096,7 +1358,9 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                         ],
                       ),
                       const Divider(),
-                      ...debtor.items.map((item) {
+                      ...debtor.items.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final item = entry.value;
                         final itemDate = item.date ?? debtor.borrowedDate;
                         final formattedDate =
                             EthiopianDate.formatShort(itemDate);
@@ -1142,14 +1406,52 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                               ),
                               Expanded(
                                 flex: 3,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(top: 2),
-                                  child: Text(
-                                    '${item.subtotal.toStringAsFixed(0)} ETB',
-                                    textAlign: TextAlign.end,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold),
-                                  ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      '${item.subtotal.toStringAsFixed(0)} ETB',
+                                      textAlign: TextAlign.end,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        InkWell(
+                                          onTap: () => _showEditDebtItemDialog(
+                                              debtor, index, item),
+                                          borderRadius: BorderRadius.circular(4),
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(4.0),
+                                            child: Icon(
+                                              Icons.edit_outlined,
+                                              size: 16,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        InkWell(
+                                          onTap: () => _confirmDeleteDebtItem(
+                                              debtor, index, item),
+                                          borderRadius: BorderRadius.circular(4),
+                                          child: const Padding(
+                                            padding: EdgeInsets.all(4.0),
+                                            child: Icon(
+                                              Icons.delete_outline,
+                                              size: 16,
+                                              color: Colors.red,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],

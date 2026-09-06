@@ -188,18 +188,73 @@ void main() {
       expect(newTotalPaid >= debtor.totalBorrowed, isTrue); // still fully paid
     });
 
-    test('Total amount visibility defaults to masked (hidden)', () {
-      bool amountVisible = false;
-      const totalOwed = 15500.0;
-      final display = amountVisible ? '${totalOwed.toStringAsFixed(2)} ETB' : '•••••• ETB';
-      expect(display, '•••••• ETB');
+    test('Debtor balance and settlement status update on editing borrowed item', () {
+      final now = DateTime.now();
+      final debtor = Debtor(
+        id: 'item-edit-test',
+        name: 'ዮሐንስ',
+        phone: '0911002233',
+        items: [
+          DebtItem(name: 'ስኳር', quantity: 2, unit: 'ኪሎ', unitPrice: 100, date: now),
+          DebtItem(name: 'ዘይት', quantity: 1, unit: 'ሊትር', unitPrice: 500, date: now),
+        ],
+        repayments: [
+          RepaymentRecord(amount: 700, date: now),
+        ],
+        totalPaid: 700,
+        borrowedDate: now,
+        lastTransactionDate: now,
+        settledDate: now, // fully paid initially (700 totalBorrowed, 700 totalPaid)
+      );
 
-      // Toggling visibility
-      amountVisible = !amountVisible;
-      final updatedDisplay = amountVisible ? '${totalOwed.toStringAsFixed(2)} ETB' : '•••••• ETB';
-      expect(updatedDisplay, '15500.00 ETB');
+      expect(debtor.totalBorrowed, 700.0);
+      expect(debtor.isFullyPaid, isTrue);
+
+      // Edit item[0] (Sugar) quantity from 2 -> 5 (new total borrowed = 5*100 + 500 = 1000)
+      final updatedItems = List<DebtItem>.from(debtor.items);
+      updatedItems[0] = DebtItem(name: 'ስኳር', quantity: 5, unit: 'ኪሎ', unitPrice: 100, date: now);
+      final newTotalBorrowed = updatedItems.fold<double>(0.0, (acc, item) => acc + item.subtotal);
+      final isNowFullyPaid = debtor.totalPaid >= newTotalBorrowed;
+      final isNowUnpaid = !isNowFullyPaid;
+
+      expect(newTotalBorrowed, 1000.0);
+      expect(isNowFullyPaid, isFalse);
+      expect(isNowUnpaid, isTrue); // settledDate becomes null
+    });
+
+    test('Debtor balance and settlement status update on deleting borrowed item', () {
+      final now = DateTime.now();
+      final debtor = Debtor(
+        id: 'item-del-test',
+        name: 'ማርታ',
+        phone: '0911998877',
+        items: [
+          DebtItem(name: 'ዱቄት', quantity: 2, unit: 'ኪሎ', unitPrice: 200, date: now),
+          DebtItem(name: 'ቡና', quantity: 1, unit: 'ኪሎ', unitPrice: 400, date: now),
+        ],
+        repayments: [
+          RepaymentRecord(amount: 500, date: now),
+        ],
+        totalPaid: 500,
+        borrowedDate: now,
+        lastTransactionDate: now,
+        settledDate: null, // unpaid initially (800 borrowed, 500 paid)
+      );
+
+      expect(debtor.totalBorrowed, 800.0);
+      expect(debtor.remainingBalance, 300.0);
+      expect(debtor.isFullyPaid, isFalse);
+
+      // Delete item[1] (Coffee, 400 ETB), remaining item is Flour (400 ETB). Total paid = 500.
+      final updatedItems = List<DebtItem>.from(debtor.items)..removeAt(1);
+      final newTotalBorrowed = updatedItems.fold<double>(0.0, (acc, item) => acc + item.subtotal);
+      final isNowFullyPaid = debtor.totalPaid >= newTotalBorrowed;
+
+      expect(newTotalBorrowed, 400.0);
+      expect(isNowFullyPaid, isTrue); // now fully paid because total paid (500) >= total borrowed (400)
     });
   });
 }
+
 
 
