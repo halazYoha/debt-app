@@ -141,7 +141,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                 children: [
                   Icon(Icons.payments, color: Color(0xFFF59E0B)),
                   SizedBox(width: 8),
-                  Text('ተጨማሪ ገንዘብ ብድር'),
+                  Expanded(child: Text('ተጨማሪ ገንዘብ ብድር')),
                 ],
               ),
               content: Column(
@@ -849,7 +849,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                 children: [
                   Icon(Icons.edit_outlined, color: Color(0xFF10B981)),
                   SizedBox(width: 8),
-                  Text('የተበደረውን ዕቃ/ገንዘብ አስተካክል'),
+                  Expanded(child: Text('የተበደረውን ዕቃ/ገንዘብ አስተካክል')),
                 ],
               ),
               content: SingleChildScrollView(
@@ -1003,7 +1003,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
           children: [
             Icon(Icons.warning_amber_rounded, color: Colors.red),
             SizedBox(width: 8),
-            Text('የተበደሩትን ዕቃ/ገንዘብ ሰርዝ'),
+            Expanded(child: Text('የተበደሩትን ዕቃ/ገንዘብ ሰርዝ')),
           ],
         ),
         content: Text(
