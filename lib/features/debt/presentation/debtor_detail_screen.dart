@@ -150,80 +150,81 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                    'ተበዳሪው ተጨማሪ ጥሬ ገንዘብ ሲበደር እዚህ ያስገቡ:',
-                    style: TextStyle(fontSize: 13, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 14),
-                  InkWell(
-                    onTap: () async {
-                      final picked = await EthiopianDatePickerDialog.show(
-                        context,
-                        initialDate: selectedDate,
-                      );
-                      if (picked != null) {
-                        setDialogState(() => selectedDate = picked);
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade400),
-                        borderRadius: BorderRadius.circular(10),
+                      'ተበዳሪው ተጨማሪ ጥሬ ገንዘብ ሲበደር እዚህ ያስገቡ:',
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 14),
+                    InkWell(
+                      onTap: () async {
+                        final picked = await EthiopianDatePickerDialog.show(
+                          context,
+                          initialDate: selectedDate,
+                        );
+                        if (picked != null) {
+                          setDialogState(() => selectedDate = picked);
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade400),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_today,
+                                size: 16, color: Color(0xFFF59E0B)),
+                            const SizedBox(width: 8),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('የተበደረበት ቀን',
+                                    style: TextStyle(
+                                        fontSize: 11, color: Colors.grey)),
+                                Text(
+                                  EthiopianDate.formatShort(selectedDate),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold, fontSize: 13),
+                                ),
+                              ],
+                            ),
+                            const Spacer(),
+                            const Icon(Icons.edit_calendar,
+                                size: 16, color: Colors.grey),
+                          ],
+                        ),
                       ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.calendar_today,
-                              size: 16, color: Color(0xFFF59E0B)),
-                          const SizedBox(width: 8),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('የተበደረበት ቀን',
-                                  style: TextStyle(
-                                      fontSize: 11, color: Colors.grey)),
-                              Text(
-                                EthiopianDate.formatShort(selectedDate),
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                            ],
-                          ),
-                          const Spacer(),
-                          const Icon(Icons.edit_calendar,
-                              size: 16, color: Colors.grey),
-                        ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _cashAmountController,
+                      autofocus: true,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        labelText: 'የተበደረው ገንዘብ መጠን (ETB) *',
+                        prefixIcon: const Icon(Icons.attach_money),
+                        hintText: '0.00',
+                        suffixText: 'ETB',
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _cashAmountController,
-                    autofocus: true,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                      labelText: 'የተበደረው ገንዘብ መጠን (ETB) *',
-                      prefixIcon: const Icon(Icons.attach_money),
-                      hintText: '0.00',
-                      suffixText: 'ETB',
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _cashNoteController,
+                      decoration: InputDecoration(
+                        labelText: 'ማስታወሻ / ምክንያት (አስፈላጊ አይደለም)',
+                        prefixIcon: const Icon(Icons.note_alt_outlined),
+                        hintText: 'ምሳሌ፡ ለትራንስፖርት / ጥሬ ገንዘብ',
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _cashNoteController,
-                    decoration: InputDecoration(
-                      labelText: 'ማስታወሻ / ምክንያት (አስፈላጊ አይደለም)',
-                      prefixIcon: const Icon(Icons.note_alt_outlined),
-                      hintText: 'ምሳሌ፡ ለትራንስፖርት / ጥሬ ገንዘብ',
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
