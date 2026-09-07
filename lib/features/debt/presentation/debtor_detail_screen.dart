@@ -144,11 +144,12 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                   Expanded(child: Text('ተጨማሪ ገንዘብ ብድር')),
                 ],
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
                     'ተበዳሪው ተጨማሪ ጥሬ ገንዘብ ሲበደር እዚህ ያስገቡ:',
                     style: TextStyle(fontSize: 13, color: Colors.grey),
                   ),
