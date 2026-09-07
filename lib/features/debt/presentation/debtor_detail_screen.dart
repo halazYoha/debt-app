@@ -269,72 +269,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
     );
   }
 
-  // ── Record partial payment ──────────────────────────────────────────────────
-  Future<void> _recordPayment(
-      Debtor currentDebtor, BuildContext dialogContext, double amount) async {
-    if (amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('ትክክለኛ መጠን ያስገቡ'),
-            backgroundColor: Colors.red),
-      );
-      return;
-    }
-    if (amount > currentDebtor.remainingBalance) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('የተሰጠው መጠን ቀሪ ዕዳን አልፏል'),
-            backgroundColor: Colors.orange),
-      );
-      return;
-    }
 
-    setState(() => _isLoading = true);
-    try {
-      final now = DateTime.now();
-      final newTotalPaid = currentDebtor.totalPaid + amount;
-      final isNowSettled = newTotalPaid >= currentDebtor.totalBorrowed;
-      final newRepayment = RepaymentRecord(
-        amount: amount,
-        date: now,
-        note: isNowSettled ? 'ከፊል/ሙሉ ክፍያ' : 'ከፊል ክፍያ',
-      );
-      final updatedRepayments = [...currentDebtor.repayments, newRepayment];
-
-      final updated = Debtor(
-        id: currentDebtor.id,
-        name: currentDebtor.name,
-        phone: currentDebtor.phone,
-        items: currentDebtor.items,
-        repayments: updatedRepayments,
-        totalPaid: newTotalPaid,
-        borrowedDate: currentDebtor.borrowedDate,
-        lastTransactionDate: now,
-        settledDate: isNowSettled ? now : currentDebtor.settledDate,
-        keepRecord: currentDebtor.keepRecord,
-      );
-      await ref.read(debtRepositoryProvider).updateDebtor(updated);
-      if (mounted) {
-        if (dialogContext.mounted) Navigator.pop(dialogContext);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('ክፍያ ተመዝግቧል! ✅'),
-              backgroundColor: Color(0xFF10B981)),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppErrorMapper.toAmharic(e)),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
 
   // ── Mark fully paid ─────────────────────────────────────────────────────────
   Future<void> _markFullyPaid(Debtor currentDebtor) async {
@@ -367,30 +302,17 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
     try {
       final now = DateTime.now();
       final remaining = currentDebtor.remainingBalance;
-      final updatedRepayments =
-          List<RepaymentRecord>.from(currentDebtor.repayments);
       if (remaining > 0) {
-        updatedRepayments.add(
-          RepaymentRecord(
-            amount: remaining,
-            date: now,
-            note: 'ሙሉ ዕዳ ተከፍሏል',
-          ),
+        final finalPayment = RepaymentRecord(
+          amount: remaining,
+          date: now,
+          note: 'ሙሉ ዕዳ ተከፍሏል',
         );
+        await ref.read(debtRepositoryProvider).addRepayment(currentDebtor, finalPayment);
+      } else {
+        // Already fully paid — just update the settled date
+        await ref.read(debtRepositoryProvider).updateSettledDate(currentDebtor, now);
       }
-      final updated = Debtor(
-        id: currentDebtor.id,
-        name: currentDebtor.name,
-        phone: currentDebtor.phone,
-        items: currentDebtor.items,
-        repayments: updatedRepayments,
-        totalPaid: currentDebtor.totalBorrowed, // fully paid
-        borrowedDate: currentDebtor.borrowedDate,
-        lastTransactionDate: now,
-        settledDate: now, // ← triggers auto-delete after 30 days
-        keepRecord: currentDebtor.keepRecord,
-      );
-      await ref.read(debtRepositoryProvider).updateDebtor(updated);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -415,83 +337,141 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
   // ── Payment dialog ──────────────────────────────────────────────────────────
   void _showPaymentDialog(Debtor currentDebtor) {
     _amountController.clear();
+    bool isSaving = false;
+
     showDialog(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
-            children: [
-              Icon(Icons.payment, color: Color(0xFF10B981)),
-              SizedBox(width: 8),
-              Text('ክፍያ ምዝገባ'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('ቀሪ ዕዳ:',
-                        style: TextStyle(color: Colors.red)),
-                    Text(
-                      '${currentDebtor.remainingBalance.toStringAsFixed(2)} ETB',
-                      style: const TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16),
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            Future<void> submitPayment() async {
+              final amount = double.tryParse(_amountController.text) ?? 0;
+              if (amount <= 0) {
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  const SnackBar(
+                      content: Text('ትክክለኛ መጠን ያስገቡ'),
+                      backgroundColor: Colors.red),
+                );
+                return;
+              }
+              if (amount > currentDebtor.remainingBalance) {
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  const SnackBar(
+                      content: Text('የተሰጠው መጠን ቀሪ ዕዳን አልፏል'),
+                      backgroundColor: Colors.orange),
+                );
+                return;
+              }
+
+              setDialogState(() => isSaving = true);
+              try {
+                final now = DateTime.now();
+                final newRepayment = RepaymentRecord(
+                  amount: amount,
+                  date: now,
+                  note: (currentDebtor.totalPaid + amount) >= currentDebtor.totalBorrowed
+                      ? 'ከፊል/ሙሉ ክፍያ'
+                      : 'ከፊል ክፍያ',
+                );
+                await ref
+                    .read(debtRepositoryProvider)
+                    .addRepayment(currentDebtor, newRepayment);
+                if (dialogContext.mounted) Navigator.pop(dialogContext);
+                if (mounted) {
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                    const SnackBar(
+                        content: Text('ክፍያ ተመዝግቧል! ✅'),
+                        backgroundColor: Color(0xFF10B981)),
+                  );
+                }
+              } catch (e) {
+                setDialogState(() => isSaving = false);
+                if (mounted) {
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                    SnackBar(
+                      content: Text(AppErrorMapper.toAmharic(e)),
+                      backgroundColor: Colors.red,
                     ),
-                  ],
-                ),
+                  );
+                }
+              }
+            }
+
+            return AlertDialog(
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Row(
+                children: [
+                  Icon(Icons.payment, color: Color(0xFF10B981)),
+                  SizedBox(width: 8),
+                  Text('ክፍያ ምዝገባ'),
+                ],
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _amountController,
-                autofocus: true,
-                decoration: InputDecoration(
-                  labelText: 'የተከፈለ መጠን (ETB)',
-                  prefixIcon: const Icon(Icons.attach_money),
-                  hintText: '0.00',
-                  suffixText: 'ETB',
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('ቀሪ ዕዳ:',
+                            style: TextStyle(color: Colors.red)),
+                        Text(
+                          '${currentDebtor.remainingBalance.toStringAsFixed(2)} ETB',
+                          style: const TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _amountController,
+                    autofocus: true,
+                    enabled: !isSaving,
+                    decoration: InputDecoration(
+                      labelText: 'የተከፈለ መጠን (ETB)',
+                      prefixIcon: const Icon(Icons.attach_money),
+                      hintText: '0.00',
+                      suffixText: 'ETB',
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                ],
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('ሰርዝ'),
-            ),
-            ElevatedButton(
-              onPressed: _isLoading
-                  ? null
-                  : () {
-                      final amount =
-                          double.tryParse(_amountController.text) ?? 0;
-                      _recordPayment(currentDebtor, dialogContext, amount);
-                    },
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 16,
-                      width: 16,
-                      child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2))
-                  : const Text('ክፍያ አስቀምጥ'),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: isSaving ? null : () => Navigator.pop(dialogContext),
+                  child: const Text('ሰርዝ'),
+                ),
+                ElevatedButton(
+                  onPressed: isSaving ? null : submitPayment,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: isSaving
+                      ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2))
+                      : const Text('ክፍያ አስቀምጥ'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -611,7 +591,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
 
   // ── Edit a repayment dialog ─────────────────────────────────────────────────
   void _showEditRepaymentDialog(
-      Debtor debtor, int index, RepaymentRecord record) {
+      Debtor debtor, RepaymentRecord record, List<RepaymentRecord> allRepayments) {
     final amtController =
         TextEditingController(text: record.amount.toStringAsFixed(2));
     final noteController =
@@ -633,7 +613,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
               try {
                 await ref
                     .read(debtRepositoryProvider)
-                    .editRepayment(debtor, index, newAmount, noteController.text);
+                    .editRepayment(debtor, record, newAmount, noteController.text, allRepayments);
                 if (dialogCtx.mounted) Navigator.pop(dialogCtx);
                 messenger.showSnackBar(
                   const SnackBar(
@@ -733,8 +713,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
   }
 
   // ── Confirm and delete a repayment ──────────────────────────────────────────
-  Future<void> _confirmDeleteRepayment(Debtor debtor, int index) async {
-    final record = debtor.repayments[index];
+  Future<void> _confirmDeleteRepayment(Debtor debtor, RepaymentRecord record, List<RepaymentRecord> allRepayments) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -769,7 +748,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
     if (confirm != true) return;
     setState(() => _isLoading = true);
     try {
-      await ref.read(debtRepositoryProvider).deleteRepayment(debtor, index);
+      await ref.read(debtRepositoryProvider).deleteRepayment(debtor, record, allRepayments);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -1058,6 +1037,23 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
   Widget build(BuildContext context) {
     final debtorAsync = ref.watch(singleDebtorStreamProvider(widget.debtorId));
     final debtor = debtorAsync.value ?? widget.initialDebtor;
+
+    // Watch repayments from the subcollection
+    final repaymentsAsync = ref.watch(repaymentsStreamProvider(widget.debtorId));
+    final subcollectionRepayments = repaymentsAsync.value ?? [];
+
+    // Always merge both sources:
+    // - Legacy: repayments embedded in the debtor document (old data)
+    // - Subcollection: new repayments written to the subcollection
+    // Deduplicate by checking subcollection ids vs legacy (legacy have no id).
+    final legacyRepayments = (debtor?.repayments ?? [])
+        .where((r) =>
+            r.id.isEmpty &&
+            (subcollectionRepayments.isEmpty || r.note != 'የቀደመ ክፍያ'))
+        .toList();
+    final allRepayments = [...legacyRepayments, ...subcollectionRepayments];
+    allRepayments.sort((a, b) => a.date.compareTo(b.date));
+    final repayments = allRepayments;
 
     if (debtor == null) {
       return Scaffold(
@@ -1608,9 +1604,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                         ],
                       ),
                       const Divider(),
-                      ...debtor.repayments.asMap().entries.map((entry) {
-                        final idx = entry.key;
-                        final repayment = entry.value;
+                      ...repayments.map((repayment) {
                         final formattedTime =
                             '${repayment.date.hour.toString().padLeft(2, '0')}:${repayment.date.minute.toString().padLeft(2, '0')}';
                         final dateStr =
@@ -1686,7 +1680,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                                           onTap: _isLoading
                                               ? null
                                               : () => _showEditRepaymentDialog(
-                                                  debtor, idx, repayment),
+                                                  debtor, repayment, repayments),
                                           borderRadius: BorderRadius.circular(4),
                                           child: const Padding(
                                             padding: EdgeInsets.all(4.0),
@@ -1701,7 +1695,7 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                                           onTap: _isLoading
                                               ? null
                                               : () => _confirmDeleteRepayment(
-                                                  debtor, idx),
+                                                  debtor, repayment, repayments),
                                           borderRadius: BorderRadius.circular(4),
                                           child: const Padding(
                                             padding: EdgeInsets.all(4.0),

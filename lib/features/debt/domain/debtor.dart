@@ -43,18 +43,21 @@ class DebtItem {
 
 /// A single repayment transaction record.
 class RepaymentRecord {
+  final String id;    // Firestore document ID in the repayments subcollection
   final double amount;
   final DateTime date;
   final String? note; // optional note, e.g. "ከፊል ክፍያ", "ሙሉ ዕዳ ተከፍሏል"
 
   const RepaymentRecord({
+    this.id = '',
     required this.amount,
     required this.date,
     this.note,
   });
 
-  factory RepaymentRecord.fromMap(Map<String, dynamic> map) {
+  factory RepaymentRecord.fromMap(Map<String, dynamic> map, {String id = ''}) {
     return RepaymentRecord(
+      id: id,
       amount: (map['amount'] ?? 0).toDouble(),
       date: (map['date'] as Timestamp?)?.toDate() ?? DateTime.now(),
       note: map['note'] as String?,
@@ -155,16 +158,22 @@ class Debtor {
     final DateTime lastTxDate =
         (data['lastTransactionDate'] as Timestamp?)?.toDate() ?? DateTime.now();
 
-    // Parse repayments list
+    // Parse repayments list — kept for backward compatibility with old documents
+    // that still have repayments embedded as an array.
+    // New repayments are stored in a subcollection and loaded separately.
     List<RepaymentRecord> repaymentsList = [];
     final rawRepayments = data['repayments'];
-    if (rawRepayments is List) {
+    // Only parse the array if it is a non-empty list.
+    // An empty [] in Firestore is treated the same as a missing field —
+    // we fall back to the synthetic record so totalPaid is always visible.
+    if (rawRepayments is List && rawRepayments.isNotEmpty) {
       repaymentsList = rawRepayments
           .whereType<Map<String, dynamic>>()
           .map((m) => RepaymentRecord.fromMap(m))
           .toList();
     } else if (totalPaidVal > 0) {
-      // Legacy fallback: if totalPaid > 0 but no repayment objects stored yet
+      // Fallback: totalPaid is set but no repayment history exists.
+      // Create a single synthetic record so the amount is visible.
       repaymentsList = [
         RepaymentRecord(
           amount: totalPaidVal,
@@ -193,7 +202,9 @@ class Debtor {
       'name': name,
       'phone': phone,
       'items': items.map((i) => i.toMap()).toList(),
-      'repayments': repayments.map((r) => r.toMap()).toList(),
+      // NOTE: repayments are no longer stored inside the debtor document.
+      // They live in the repayments subcollection to avoid the 1MB document limit.
+      // The 'repayments' array in old documents is still read above for backward compatibility.
       'totalBorrowed': totalBorrowed, // denormalised for Firestore queries
       'totalPaid': totalPaid,
       'borrowedDate': Timestamp.fromDate(borrowedDate),
