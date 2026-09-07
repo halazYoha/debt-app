@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../features/auth/data/auth_repository.dart';
 import 'settings_sheet.dart';
 
+import '../features/home/presentation/home_screen.dart';
+
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
 
@@ -56,13 +58,26 @@ class AppDrawer extends ConsumerWidget {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.home_rounded, color: Color(0xFF10B981)),
+            leading: const Icon(Icons.people_outline_rounded, color: Color(0xFF10B981)),
             title: const Text(
-              'ዋና ገጽ',
+              'የደንበኞች ዕዳ',
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
             onTap: () {
-              Navigator.pop(context); // Close drawer
+              Navigator.pop(context);
+              ref.read(activeHomeTabProvider.notifier).selectTab(HomeTab.debtors);
+              context.go('/');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.account_balance_wallet_outlined, color: Color(0xFFF59E0B)),
+            title: const Text(
+              'የእኔ ዕዳ (የወሰድኩት)',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              ref.read(activeHomeTabProvider.notifier).selectTab(HomeTab.creditors);
               context.go('/');
             },
           ),

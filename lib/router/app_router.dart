@@ -8,12 +8,23 @@ import '../features/debt/presentation/debtor_detail_screen.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/debt/domain/debtor.dart';
 
+import '../features/creditor/presentation/add_creditor_screen.dart';
+import '../features/creditor/presentation/creditor_detail_screen.dart';
+import '../features/creditor/domain/creditor.dart';
+
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 void navigateToDebtorDetail(String debtorId) {
   final context = rootNavigatorKey.currentContext;
   if (context != null) {
     context.go('/debtor/$debtorId');
+  }
+}
+
+void navigateToCreditorDetail(String creditorId) {
+  final context = rootNavigatorKey.currentContext;
+  if (context != null) {
+    context.go('/creditor/$creditorId');
   }
 }
 
@@ -53,6 +64,21 @@ final routerProvider = Provider<GoRouter>((ref) {
               return DebtorDetailScreen(
                 debtorId: debtorId,
                 initialDebtor: initialDebtor,
+              );
+            },
+          ),
+          GoRoute(
+            path: 'add_creditor',
+            builder: (context, state) => const AddCreditorScreen(),
+          ),
+          GoRoute(
+            path: 'creditor/:id',
+            builder: (context, state) {
+              final creditorId = state.pathParameters['id']!;
+              final initialCreditor = state.extra as Creditor?;
+              return CreditorDetailScreen(
+                creditorId: creditorId,
+                initialCreditor: initialCreditor,
               );
             },
           ),
