@@ -1224,250 +1224,401 @@ class _CreditorDetailScreenState extends ConsumerState<CreditorDetailScreen> {
               const SizedBox(height: 12),
 
               // ── Items Breakdown Card ────────────────────────────────────
-              if (creditor.items.isNotEmpty)
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.inventory_2_outlined,
-                                color: Color(0xFFF59E0B)),
-                            const SizedBox(width: 8),
-                            const Expanded(
-                              child: Text('የተበደሯቸው ዕቃዎች እና ጥሬ ገንዘብ',
-                                  style: TextStyle(
-                                      fontSize: 16, fontWeight: FontWeight.bold)),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF59E0B)
-                                    .withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                '${creditor.items.length} ዕቃዎች',
-                                style: const TextStyle(
-                                  color: Color(0xFFF59E0B),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        ...creditor.items.asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final item = entry.value;
-                          final itemDate = item.date ?? creditor.borrowedDate;
-                          final formattedDate =
-                              EthiopianDate.formatShort(itemDate);
-                          final isCashLoan = item.unit == 'ብር' ||
-                              item.name == 'ጥሬ ገንዘብ ብድር' ||
-                              (item.quantity == 1 && item.unit == 'ብር');
+              if (creditor.items.isNotEmpty) ...[
+                Builder(
+                  builder: (context) {
+                    final Map<DateTime, List<MapEntry<int, DebtItem>>>
+                        itemsByDate = {};
+                    for (int i = 0; i < creditor.items.length; i++) {
+                      final item = creditor.items[i];
+                      final rawDate = item.date ?? creditor.borrowedDate;
+                      final dateKey =
+                          DateTime(rawDate.year, rawDate.month, rawDate.day);
+                      itemsByDate
+                          .putIfAbsent(dateKey, () => [])
+                          .add(MapEntry(i, item));
+                    }
+                    final sortedDates = itemsByDate.keys.toList()
+                      ..sort((a, b) => a.compareTo(b));
 
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.grey.shade900
-                                  : Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.grey.shade800
-                                    : Colors.grey.shade200,
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                    return Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                               children: [
-                                Row(
+                                const Icon(Icons.inventory_2_outlined,
+                                    color: Color(0xFFF59E0B)),
+                                const SizedBox(width: 8),
+                                const Expanded(
+                                  child: Text(
+                                    'የተበደሯቸው ዕቃዎች እና ጥሬ ገንዘብ',
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF59E0B)
+                                        .withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '${creditor.items.length} ዕቃዎች',
+                                    style: const TextStyle(
+                                      color: Color(0xFFF59E0B),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            ...sortedDates.map((dateKey) {
+                              final dateEntries = itemsByDate[dateKey]!;
+                              final formattedDate =
+                                  EthiopianDate.formatShort(dateKey);
+                              final daySubtotal = dateEntries.fold<double>(
+                                  0.0, (sum, e) => sum + e.value.subtotal);
+
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 16),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.grey.shade900
+                                      : Colors.grey.shade50,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: const Color(0xFFF59E0B)
+                                        .withValues(alpha: 0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: isCashLoan
-                                            ? Colors.green
-                                                .withValues(alpha: 0.1)
-                                            : const Color(0xFFF59E0B)
+                                    // Date Section Header
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.calendar_today,
+                                                  size: 14,
+                                                  color: Color(0xFFF59E0B)),
+                                              const SizedBox(width: 6),
+                                              Expanded(
+                                                child: Text(
+                                                  'ቀን፡ $formattedDate',
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 14,
+                                                    color: Color(0xFFF59E0B),
+                                                  ),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFF59E0B)
                                                 .withValues(alpha: 0.1),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        isCashLoan
-                                            ? Icons.payments_outlined
-                                            : Icons.shopping_bag_outlined,
-                                        size: 18,
-                                        color: isCashLoan
-                                            ? Colors.green
-                                            : const Color(0xFFF59E0B),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            item.name,
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            '${dateEntries.length} ዕቃ',
                                             style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 15,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(0xFFF59E0B),
                                             ),
                                           ),
-                                          const SizedBox(height: 4),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    const Divider(height: 1),
+                                    const SizedBox(height: 10),
+
+                                    // Item Cards for this Date
+                                    ...dateEntries.map((entry) {
+                                      final index = entry.key;
+                                      final item = entry.value;
+                                      final isCashLoan = item.unit == 'ብር' ||
+                                          item.name == 'ጥሬ ገንዘብ ብድር' ||
+                                          (item.quantity == 1 &&
+                                              item.unit == 'ብር');
+
+                                      return Container(
+                                        margin:
+                                            const EdgeInsets.only(bottom: 8),
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).cardColor,
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          border: Border.all(
+                                            color: Theme.of(context)
+                                                        .brightness ==
+                                                    Brightness.dark
+                                                ? Colors.grey.shade800
+                                                : Colors.grey.shade300,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Container(
+                                                  padding:
+                                                      const EdgeInsets.all(6),
+                                                  decoration: BoxDecoration(
+                                                    color: isCashLoan
+                                                        ? Colors.green
+                                                            .withValues(
+                                                                alpha: 0.1)
+                                                        : const Color(
+                                                                0xFFF59E0B)
+                                                            .withValues(
+                                                                alpha: 0.1),
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: Icon(
+                                                    isCashLoan
+                                                        ? Icons
+                                                            .payments_outlined
+                                                        : Icons
+                                                            .shopping_bag_outlined,
+                                                    size: 16,
+                                                    color: isCashLoan
+                                                        ? Colors.green
+                                                        : const Color(
+                                                            0xFFF59E0B),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        item.name,
+                                                        style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 14,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 2),
+                                                      Text(
+                                                        isCashLoan
+                                                            ? 'ጥሬ ገንዘብ ብድር'
+                                                            : '${item.quantity} ${item.unit} × ${item.unitPrice.toStringAsFixed(2)} ETB',
+                                                        style: TextStyle(
+                                                          color: Colors
+                                                              .grey.shade700,
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 6),
+                                                Text(
+                                                  '${item.subtotal.toStringAsFixed(2)} ETB',
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 14,
+                                                    color: Color(0xFFF59E0B),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.end,
+                                              children: [
+                                                InkWell(
+                                                  onTap: () =>
+                                                      _showEditDebtItemDialog(
+                                                          creditor,
+                                                          index,
+                                                          item),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                  child: Padding(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 2),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          Icons.edit_outlined,
+                                                          size: 15,
+                                                          color: Theme.of(
+                                                                  context)
+                                                              .colorScheme
+                                                              .primary,
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 2),
+                                                        Text(
+                                                          'አስተካክል',
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .colorScheme
+                                                                .primary,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                InkWell(
+                                                  onTap: () =>
+                                                      _confirmDeleteDebtItem(
+                                                          creditor,
+                                                          index,
+                                                          item),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                  child: const Padding(
+                                                    padding: EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 2),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          Icons.delete_outline,
+                                                          size: 15,
+                                                          color: Colors.red,
+                                                        ),
+                                                        SizedBox(width: 2),
+                                                        Text(
+                                                          'ሰርዝ',
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            color: Colors.red,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }),
+
+                                    // Daily Subtotal Box
+                                    Container(
+                                      margin: const EdgeInsets.only(top: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF59E0B)
+                                            .withValues(alpha: 0.08),
+                                        borderRadius:
+                                            BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
                                           Text(
-                                            isCashLoan
-                                                ? 'ጥሬ ገንዘብ ብድር'
-                                                : '${item.quantity} ${item.unit} × ${item.unitPrice.toStringAsFixed(2)} ETB',
-                                            style: TextStyle(
-                                              color: Colors.grey.shade700,
+                                            'የቀን $formattedDate ድምር:',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
                                               fontSize: 13,
-                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          Text(
+                                            '${daySubtotal.toStringAsFixed(2)} ETB',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
+                                              color: Color(0xFFF59E0B),
                                             ),
                                           ),
                                         ],
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '${item.subtotal.toStringAsFixed(2)} ETB',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 15,
-                                        color: Color(0xFFF59E0B),
-                                      ),
-                                    ),
                                   ],
                                 ),
-                                const SizedBox(height: 8),
-                                const Divider(height: 1),
-                                const SizedBox(height: 6),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.calendar_today,
-                                            size: 12, color: Colors.grey),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          formattedDate,
-                                          style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        InkWell(
-                                          onTap: () => _showEditDebtItemDialog(
-                                              creditor, index, item),
-                                          borderRadius:
-                                              BorderRadius.circular(6),
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 6, vertical: 4),
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.edit_outlined,
-                                                  size: 16,
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .primary,
-                                                ),
-                                                const SizedBox(width: 2),
-                                                Text(
-                                                  'አስተካክል',
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .primary,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 10),
-                                        InkWell(
-                                          onTap: () => _confirmDeleteDebtItem(
-                                              creditor, index, item),
-                                          borderRadius:
-                                              BorderRadius.circular(6),
-                                          child: const Padding(
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: 6, vertical: 4),
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.delete_outline,
-                                                  size: 16,
-                                                  color: Colors.red,
-                                                ),
-                                                SizedBox(width: 2),
-                                                Text(
-                                                  'ሰርዝ',
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          );
-                        }),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF59E0B)
-                                .withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('ጠቅላላ የተበደሩት:',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold, fontSize: 15)),
-                              Text(
-                                '${creditor.totalBorrowed.toStringAsFixed(2)} ETB',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: Color(0xFFF59E0B)),
+                              );
+                            }),
+
+                            // Grand Total Box across all days
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF59E0B)
+                                    .withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                    color: const Color(0xFFF59E0B)),
                               ),
-                            ],
-                          ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'ጠቅላላ የሁሉም ቀናት ብድር:',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${creditor.totalBorrowed.toStringAsFixed(2)} ETB',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 17,
+                                      color: Color(0xFFF59E0B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  },
                 ),
+              ],
               if (creditor.items.isNotEmpty) const SizedBox(height: 12),
 
               // ── Financial Summary Card ────────────────────────────────────
