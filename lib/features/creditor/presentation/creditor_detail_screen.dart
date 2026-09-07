@@ -1594,19 +1594,28 @@ class _CreditorDetailScreenState extends ConsumerState<CreditorDetailScreen> {
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text(
-                                    'ጠቅላላ የሁሉም ቀናት ብድር:',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
+                                  const Expanded(
+                                    child: Text(
+                                      'ጠቅላላ የሁሉም ቀናት ብድር:',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  Text(
-                                    '${creditor.totalBorrowed.toStringAsFixed(2)} ETB',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 17,
-                                      color: Color(0xFFF59E0B),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        '${creditor.totalBorrowed.toStringAsFixed(2)} ETB',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                          color: Color(0xFFF59E0B),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ],
