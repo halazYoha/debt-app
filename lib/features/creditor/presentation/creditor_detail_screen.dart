@@ -31,6 +31,19 @@ class _CreditorDetailScreenState extends ConsumerState<CreditorDetailScreen> {
   final _cashNoteController = TextEditingController();
   bool _isLoading = false;
 
+  // ── Ethiopian Banks List ─────────────────────────────────────────────────
+  static const List<Map<String, String>> _ethiopianBanks = [
+    {'en': 'Commercial Bank of Ethiopia', 'am': 'የኢትዮጵያ ንግድ ባንክ'},
+    {'en': 'Awash Bank',                  'am': 'አዋሽ ባንክ'},
+    {'en': 'Abay Bank',                   'am': 'አባይ ባንክ'},
+    {'en': 'Coffe Bank',                  'am': 'ቡና ባንክ'},
+    {'en': 'Dashen Bank',                 'am': 'ዳሽን ባንክ'},
+    {'en': 'Abyssinia Bank',              'am': 'አቢሲኒያ ባንክ'},
+    {'en': 'Amhara Bank',                 'am': 'አማራ ባንክ'},
+    {'en': 'Tsedey Bank',                 'am': 'ጸደይ ባንክ'},
+    {'en': 'Tsehay Bank',                 'am': 'ፀሃይ ባንክ'},
+  ];
+
   @override
   void dispose() {
     _amountController.dispose();
@@ -271,6 +284,7 @@ class _CreditorDetailScreenState extends ConsumerState<CreditorDetailScreen> {
   void _showPaymentDialog(Creditor currentCreditor) {
     _amountController.clear();
     bool isSaving = false;
+    String? selectedBankEn; // internal key
 
     showDialog(
       context: context,
@@ -299,6 +313,11 @@ class _CreditorDetailScreenState extends ConsumerState<CreditorDetailScreen> {
               setDialogState(() => isSaving = true);
               try {
                 final now = DateTime.now();
+                final selectedBankAm = _ethiopianBanks
+                    .firstWhere(
+                      (b) => b['en'] == selectedBankEn,
+                      orElse: () => {'am': selectedBankEn ?? ''},
+                    )['am'];
                 final newRepayment = RepaymentRecord(
                   amount: amount,
                   date: now,
@@ -306,6 +325,7 @@ class _CreditorDetailScreenState extends ConsumerState<CreditorDetailScreen> {
                           currentCreditor.totalBorrowed
                       ? 'ከፊል/ሙሉ ክፍያ'
                       : 'ከፊል ክፍያ',
+                  bankName: selectedBankEn != null ? selectedBankAm : null,
                 );
                 await ref
                     .read(creditorRepositoryProvider)
@@ -341,48 +361,107 @@ class _CreditorDetailScreenState extends ConsumerState<CreditorDetailScreen> {
                   Expanded(child: Text('ለአቅራቢ ክፍያ ምዝገባ')),
                 ],
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(10),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('ቀሪ ዕዳ:',
+                              style: TextStyle(color: Colors.red)),
+                          Text(
+                            '${currentCreditor.remainingBalance.toStringAsFixed(2)} ETB',
+                            style: const TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('ቀሪ ዕዳ:',
-                            style: TextStyle(color: Colors.red)),
-                        Text(
-                          '${currentCreditor.remainingBalance.toStringAsFixed(2)} ETB',
-                          style: const TextStyle(
-                              color: Colors.red,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _amountController,
+                      autofocus: true,
+                      enabled: !isSaving,
+                      decoration: InputDecoration(
+                        labelText: 'የተከፈለ መጠን (ETB)',
+                        prefixIcon: const Icon(Icons.attach_money),
+                        hintText: '0.00',
+                        suffixText: 'ETB',
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    const SizedBox(height: 16),
+                    // ── Bank Selection ──────────────────────────────────────
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                            color: Colors.grey.shade400, width: 1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String?>(
+                          isExpanded: true,
+                          value: selectedBankEn,
+                          hint: const Row(
+                            children: [
+                              Icon(Icons.account_balance,
+                                  size: 18, color: Colors.grey),
+                              SizedBox(width: 8),
+                              Text('ባንክ ይምረጡ (አስፈላጊ አይደለም)',
+                                  style: TextStyle(
+                                      color: Colors.grey, fontSize: 14)),
+                            ],
+                          ),
+                          items: [
+                            const DropdownMenuItem<String?>(
+                              value: null,
+                              child: Text('— ምንም ባንክ —',
+                                  style: TextStyle(
+                                      color: Colors.grey, fontSize: 14)),
+                            ),
+                            ..._ethiopianBanks.map((bank) =>
+                              DropdownMenuItem<String?>(
+                                value: bank['en'],
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.account_balance_outlined,
+                                        size: 16,
+                                        color: Color(0xFFF59E0B)),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(bank['am']!,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                              fontSize: 14)),
+                                    ),
+                                  ],
+                                ),
+                              )),
+                          ],
+                          onChanged: isSaving
+                              ? null
+                              : (val) =>
+                                  setDialogState(() => selectedBankEn = val),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _amountController,
-                    autofocus: true,
-                    enabled: !isSaving,
-                    decoration: InputDecoration(
-                      labelText: 'የተከፈለ መጠን (ETB)',
-                      prefixIcon: const Icon(Icons.attach_money),
-                      hintText: '0.00',
-                      suffixText: 'ETB',
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                ],
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -538,6 +617,12 @@ class _CreditorDetailScreenState extends ConsumerState<CreditorDetailScreen> {
     final formKey = GlobalKey<FormState>();
     bool isSaving = false;
 
+    // Pre-select bank if record already has one (match by Amharic name)
+    String? selectedBankEn = _ethiopianBanks
+        .where((b) => b['am'] == record.bankName)
+        .map((b) => b['en'])
+        .firstOrNull;
+
     showDialog(
       context: context,
       builder: (dialogCtx) {
@@ -549,10 +634,23 @@ class _CreditorDetailScreenState extends ConsumerState<CreditorDetailScreen> {
               if (newAmount == null || newAmount <= 0) return;
               setDialogState(() => isSaving = true);
               final messenger = ScaffoldMessenger.of(context);
+              final selectedBankAm = _ethiopianBanks
+                  .firstWhere(
+                    (b) => b['en'] == selectedBankEn,
+                    orElse: () => {'am': selectedBankEn ?? ''},
+                  )['am'];
               try {
                 await ref
                     .read(creditorRepositoryProvider)
-                    .editRepayment(creditor, record, newAmount, noteController.text, allRepayments);
+                    .editRepayment(
+                      creditor,
+                      record,
+                      newAmount,
+                      noteController.text,
+                      allRepayments,
+                      newBankName:
+                          selectedBankEn != null ? selectedBankAm : null,
+                    );
                 if (dialogCtx.mounted) Navigator.pop(dialogCtx);
                 messenger.showSnackBar(
                   const SnackBar(
@@ -583,44 +681,104 @@ class _CreditorDetailScreenState extends ConsumerState<CreditorDetailScreen> {
               ),
               content: Form(
                 key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: amtController,
-                      autofocus: true,
-                      decoration: InputDecoration(
-                        labelText: 'የክፍያ መጠን (ETB) *',
-                        prefixIcon: const Icon(Icons.attach_money),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        controller: amtController,
+                        autofocus: true,
+                        decoration: InputDecoration(
+                          labelText: 'የክፍያ መጠን (ETB) *',
+                          prefixIcon: const Icon(Icons.attach_money),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'የክፍያ መጠን ያስገቡ';
+                          }
+                          final d = double.tryParse(v.trim());
+                          if (d == null || d <= 0) {
+                            return 'ትክክለኛ መጠን ያስገቡ';
+                          }
+                          return null;
+                        },
+                        enabled: !isSaving,
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return 'የክፍያ መጠን ያስገቡ';
-                        }
-                        final d = double.tryParse(v.trim());
-                        if (d == null || d <= 0) {
-                          return 'ትክክለኛ መጠን ያስገቡ';
-                        }
-                        return null;
-                      },
-                      enabled: !isSaving,
-                    ),
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      controller: noteController,
-                      decoration: InputDecoration(
-                        labelText: 'ማስታወሻ (አስፈላጊ አይደለም)',
-                        prefixIcon: const Icon(Icons.notes_outlined),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                      const SizedBox(height: 14),
+                      TextFormField(
+                        controller: noteController,
+                        decoration: InputDecoration(
+                          labelText: 'ማስታወሻ (አስፈላጊ አይደለም)',
+                          prefixIcon: const Icon(Icons.notes_outlined),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        enabled: !isSaving,
                       ),
-                      enabled: !isSaving,
-                    ),
-                  ],
+                      const SizedBox(height: 14),
+                      // ── Bank Selection ────────────────────────────────
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                              color: Colors.grey.shade400, width: 1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String?>(
+                            isExpanded: true,
+                            value: selectedBankEn,
+                            hint: const Row(
+                              children: [
+                                Icon(Icons.account_balance,
+                                    size: 18, color: Colors.grey),
+                                SizedBox(width: 8),
+                                Text('ባንክ ይምረጡ',
+                                    style: TextStyle(
+                                        color: Colors.grey, fontSize: 14)),
+                              ],
+                            ),
+                            items: [
+                              const DropdownMenuItem<String?>(
+                                value: null,
+                                child: Text('— ምንም ባንክ —',
+                                    style: TextStyle(
+                                        color: Colors.grey, fontSize: 14)),
+                              ),
+                              ..._ethiopianBanks.map((bank) =>
+                                DropdownMenuItem<String?>(
+                                  value: bank['en'],
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                          Icons.account_balance_outlined,
+                                          size: 16,
+                                          color: Color(0xFFF59E0B)),
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                        child: Text(bank['am']!,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                                fontSize: 14)),
+                                      ),
+                                    ],
+                                  ),
+                                )),
+                            ],
+                            onChanged: isSaving
+                                ? null
+                                : (val) => setDialogState(
+                                    () => selectedBankEn = val),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               actions: [
@@ -1798,6 +1956,30 @@ class _CreditorDetailScreenState extends ConsumerState<CreditorDetailScreen> {
                                               fontSize: 11,
                                               color: Colors.grey[700],
                                               fontStyle: FontStyle.italic),
+                                        ),
+                                      ],
+                                      if (repayment.bankName != null &&
+                                          repayment.bankName!.isNotEmpty) ...[
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            const Icon(
+                                                Icons.account_balance_outlined,
+                                                size: 12,
+                                                color: Color(0xFFF59E0B)),
+                                            const SizedBox(width: 4),
+                                            Flexible(
+                                              child: Text(
+                                                repayment.bankName!,
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  color: Color(0xFFF59E0B),
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ],

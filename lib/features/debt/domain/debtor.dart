@@ -47,12 +47,14 @@ class RepaymentRecord {
   final double amount;
   final DateTime date;
   final String? note; // optional note, e.g. "ከፊል ክፍያ", "ሙሉ ዕዳ ተከፍሏል"
+  final String? bankName; // bank used for transfer (creditor repayments only)
 
   const RepaymentRecord({
     this.id = '',
     required this.amount,
     required this.date,
     this.note,
+    this.bankName,
   });
 
   factory RepaymentRecord.fromMap(Map<String, dynamic> map, {String id = ''}) {
@@ -61,6 +63,7 @@ class RepaymentRecord {
       amount: (map['amount'] ?? 0).toDouble(),
       date: (map['date'] as Timestamp?)?.toDate() ?? DateTime.now(),
       note: map['note'] as String?,
+      bankName: map['bankName'] as String?,
     );
   }
 
@@ -68,6 +71,7 @@ class RepaymentRecord {
         'amount': amount,
         'date': Timestamp.fromDate(date),
         if (note != null && note!.isNotEmpty) 'note': note,
+        if (bankName != null && bankName!.isNotEmpty) 'bankName': bankName,
       };
 }
 

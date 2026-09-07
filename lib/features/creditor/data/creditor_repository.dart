@@ -192,7 +192,8 @@ class CreditorRepository {
       RepaymentRecord repayment,
       double newAmount,
       String? newNote,
-      List<RepaymentRecord> allRepayments) async {
+      List<RepaymentRecord> allRepayments,
+      {String? newBankName}) async {
     try {
       final updatedRecord = RepaymentRecord(
         id: repayment.id,
@@ -200,6 +201,7 @@ class CreditorRepository {
         date: repayment.date,
         note:
             newNote?.trim().isNotEmpty == true ? newNote!.trim() : repayment.note,
+        bankName: newBankName ?? repayment.bankName,
       );
 
       if (repayment.id.isNotEmpty) {
