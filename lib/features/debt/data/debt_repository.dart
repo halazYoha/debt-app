@@ -195,13 +195,19 @@ class DebtRepository {
   }
 
   Future<void> editRepayment(
-      Debtor debtor, RepaymentRecord repayment, double newAmount, String? newNote, List<RepaymentRecord> allRepayments) async {
+      Debtor debtor,
+      RepaymentRecord repayment,
+      double newAmount,
+      String? newNote,
+      List<RepaymentRecord> allRepayments,
+      {String? newBankName}) async {
     try {
       final updatedRecord = RepaymentRecord(
         id: repayment.id,
         amount: newAmount,
         date: repayment.date,
         note: newNote?.trim().isNotEmpty == true ? newNote!.trim() : repayment.note,
+        bankName: newBankName ?? repayment.bankName,
       );
 
       // Update in subcollection if it has an id (new-style)
