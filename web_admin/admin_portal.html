@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DebtTracker - Developer Admin Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Firebase JS SDK (v10 Modular via Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #f59e0b;
+      --accent-hover: #d97706;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --success: #10b981;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .header h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .header p {
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 950px;
+      display: grid;
+      gap: 2rem;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.75rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+
+    .card h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #fff;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background-color: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      color: #fff;
+      font-family: inherit;
+      font-size: 1rem;
+      transition: all 0.2s;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.875rem;
+      background-color: var(--accent);
+      color: #000;
+      font-weight: 700;
+      font-size: 1rem;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.1s;
+    }
+
+    button:hover {
+      background-color: var(--accent-hover);
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .action-btn-sm {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.85rem;
+      border-radius: 0.375rem;
+      width: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    /* Table styling */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background-color: #0f172a;
+      color: var(--text-muted);
+      font-weight: 700;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    tr:hover {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge-activated {
+      background-color: rgba(16, 185, 129, 0.2);
+      color: var(--success);
+      border: 1px solid var(--success);
+    }
+
+    .badge-trial {
+      background-color: rgba(245, 158, 11, 0.2);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .badge-expired {
+      background-color: rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+      border: 1px solid var(--danger);
+    }
+
+    .result-box {
+      margin-top: 1.5rem;
+      padding: 1.25rem;
+      background-color: #090d16;
+      border: 1px border-dashed var(--accent);
+      border-radius: 0.75rem;
+      text-align: center;
+      display: none;
+    }
+
+    .code-display {
+      font-family: monospace;
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: 4px;
+      color: var(--accent);
+      margin: 0.5rem 0 1rem 0;
+    }
+
+    .copy-btn {
+      background-color: #334155;
+      color: #fff;
+      font-size: 0.875rem;
+      padding: 0.5rem 1rem;
+      width: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .copy-btn:hover {
+      background-color: #475569;
+    }
+
+    .info-tag {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>DebtTracker Admin Portal</h1>
+    <p>Registered Customers & Activation Code Generator</p>
+  </div>
+
+  <div class="container">
+
+    <!-- Registered Customers Card -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+        <h2>👥 Registered Customers</h2>
+        <div style="width: 300px;">
+          <input type="text" id="searchInput" placeholder="🔍 Search Email or Device ID..." onkeyup="filterCustomers()">
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Customer Email</th>
+              <th>Device ID</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="customerTableBody">
+            <tr>
+              <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                ⏳ Loading customers from Firestore...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="info-tag" style="margin-top: 0.75rem;">
+        💡 Ask caller for their <strong>Email</strong> → Click <strong>"⚡ Select & Generate Code"</strong>.
+      </div>
+    </div>
+    
+    <!-- Code Generator Card -->
+    <div class="card" id="generatorSection">
+      <h2>🔑 Code Generator</h2>
+      
+      <div class="grid-2">
+        <div class="form-group">
+          <label for="selectedEmail">Customer Email</label>
+          <input type="text" id="selectedEmail" placeholder="e.g. user@gmail.com" style="color: var(--accent); font-weight: bold;">
+        </div>
+        
+        <div class="form-group">
+          <label for="deviceId">Device ID (Optional if Email selected)</label>
+          <input type="text" id="deviceId" placeholder="Device ID or auto-filled" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label for="plan">Subscription Plan</label>
+          <select id="plan">
+            <option value="PERMANENT">Permanent (Lifetime Access)</option>
+            <option value="ANNUAL">Annual (1 Year - 365 Days)</option>
+            <option value="MONTHLY">Monthly (30 Days)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="secretKey">Secret Key</label>
+          <input type="password" id="secretKey" value="Htea2119" required>
+        </div>
+      </div>
+
+      <button onclick="generateCode()">Generate Activation Code</button>
+
+      <div id="resultBox" class="result-box">
+        <div class="info-tag">
+          Activation Code for <span id="targetEmailDisplay" style="color:var(--accent); font-weight:bold;"></span> (<span id="targetDevice" style="color:#fff;"></span>)
+        </div>
+        <div class="code-display" id="generatedCode">XXXX-XXXX</div>
+        <button class="copy-btn" onclick="copyCode()">
+          📋 Copy Code for Customer
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Firebase Config for dept-app-4306a
+    const firebaseConfig = {
+      apiKey: 'AIzaSyDSDe2Gt4xlWHUDofGbcws6PgeC2UCGeAc',
+      authDomain: 'dept-app-4306a.firebaseapp.com',
+      projectId: 'dept-app-4306a',
+      storageBucket: 'dept-app-4306a.firebasestorage.app',
+      messagingSenderId: '556367125182',
+      appId: '1:556367125182:web:b1c4d6f32fdb155c9d9cef'
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let allCustomers = [];
+
+    // Fetch customers from Firestore (app_customers + users collections)
+    async function loadCustomers() {
+      const tbody = document.getElementById('customerTableBody');
+      try {
+        const customersMap = new Map();
+
+        // Listener for app_customers
+        db.collection('app_customers').onSnapshot((snapshot) => {
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            const emailKey = (data.userEmail || doc.id).toLowerCase();
+            customersMap.set(emailKey, { id: doc.id, ...data });
+          });
+          allCustomers = Array.from(customersMap.values());
+          renderCustomers(allCustomers);
+        });
+
+        // Listener for users collection (existing app users)
+        db.collection('users').onSnapshot((snapshot) => {
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            const emailKey = (data.email || data.userEmail || doc.id).toLowerCase();
+            if (!customersMap.has(emailKey)) {
+              customersMap.set(emailKey, {
+                id: doc.id,
+                deviceId: data.deviceId || doc.id,
+                userEmail: data.email || data.userEmail || doc.id,
+                isActivated: data.isActivated || false,
+                plan: data.plan || 'trial',
+                installDate: data.createdAt || data.installDate || new Date()
+              });
+            }
+          });
+          allCustomers = Array.from(customersMap.values());
+          renderCustomers(allCustomers);
+        });
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--danger);">${e.message}</td></tr>`;
+      }
+    }
+
+    function renderCustomers(customers) {
+      const tbody = document.getElementById('customerTableBody');
+      if (customers.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:1.5rem;">No registered app users found yet.</td></tr>`;
+        return;
+      }
+
+      let html = '';
+      customers.forEach((c, idx) => {
+        const email = c.userEmail || 'Unregistered Email';
+        const deviceId = c.deviceId || c.id;
+        
+        let statusBadge = '<span class="badge badge-trial">Trial</span>';
+        if (c.isActivated) {
+          statusBadge = `<span class="badge badge-activated">${c.plan || 'ACTIVATED'}</span>`;
+        } else if (c.installDate) {
+          const install = c.installDate.toDate ? c.installDate.toDate() : new Date(c.installDate);
+          const elapsedDays = Math.floor((new Date() - install) / (1000 * 60 * 60 * 24));
+          if (elapsedDays >= 30) {
+            statusBadge = '<span class="badge badge-expired">Trial Expired</span>';
+          } else {
+            statusBadge = `<span class="badge badge-trial">${30 - elapsedDays} Days Left</span>`;
+          }
+        }
+
+        html += `
+          <tr>
+            <td style="font-weight:600;">${escapeHtml(email)}</td>
+            <td style="font-family:monospace; color:var(--text-muted);">${escapeHtml(deviceId)}</td>
+            <td>${statusBadge}</td>
+            <td>
+              <button class="action-btn-sm" onclick="selectCustomerByIndex(${idx})">
+                ⚡ Select & Generate Code
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function selectCustomerByIndex(idx) {
+      const c = allCustomers[idx];
+      if (!c) return;
+      const email = c.userEmail || '';
+      const deviceId = c.deviceId || c.id || '';
+      document.getElementById('selectedEmail').value = email;
+      document.getElementById('deviceId').value = deviceId;
+      document.getElementById('generatorSection').scrollIntoView({ behavior: 'smooth' });
+      generateCode();
+    }
+
+    async function generateCode() {
+      let deviceId = document.getElementById('deviceId').value.trim().toUpperCase();
+      const email = document.getElementById('selectedEmail').value.trim();
+      const plan = document.getElementById('plan').value;
+      const secret = document.getElementById('secretKey').value;
+
+      if (!deviceId && email) {
+        deviceId = email.toUpperCase();
+      }
+
+      if (!deviceId && !email) {
+        alert('Please select a customer or enter an Email / Device ID');
+        return;
+      }
+
+      const payload = `${deviceId}:${plan}`;
+
+      // HMAC SHA-256 using Web Crypto API
+      const encoder = new TextEncoder();
+      const keyData = encoder.encode(secret);
+      const messageData = encoder.encode(payload);
+
+      const cryptoKey = await (window.crypto.subtle || window.crypto.webkitSubtle).importKey(
+        'raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+      );
+
+      const signature = await (window.crypto.subtle || window.crypto.webkitSubtle).sign('HMAC', cryptoKey, messageData);
+      
+      const hashArray = Array.from(new Uint8Array(signature));
+      const hex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+
+      const part1 = hex.substring(0, 4);
+      const part2 = hex.substring(4, 8);
+      const finalCode = `${part1}-${part2}`;
+
+      document.getElementById('targetEmailDisplay').innerText = email || 'Customer';
+      document.getElementById('targetDevice').innerText = deviceId;
+      document.getElementById('generatedCode').innerText = finalCode;
+      document.getElementById('resultBox').style.display = 'block';
+
+      // Also auto-activate in Firestore if online
+      try {
+        let expiryDate = null;
+        const now = new Date();
+        if (plan === 'MONTHLY') {
+          expiryDate = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
+        } else if (plan === 'ANNUAL') {
+          expiryDate = new Date(now.getTime() + (365 * 24 * 60 * 60 * 1000));
+        }
+
+        const docKey = email ? email.trim().toLowerCase() : deviceId;
+
+        await db.collection('app_customers').doc(docKey).set({
+          userEmail: email || docKey,
+          deviceId: deviceId,
+          isActivated: true,
+          plan: plan.toLowerCase(),
+          activationCode: finalCode,
+          activatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          expiryDate: expiryDate ? firebase.firestore.Timestamp.fromDate(expiryDate) : null
+        }, { merge: true });
+
+        console.log("Auto-synced activation to Firestore doc:", docKey);
+      } catch (e) {
+        console.warn("Firestore sync skipped:", e);
+      }
+    }
+
+    function copyCode() {
+      const code = document.getElementById('generatedCode').innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        alert(`Copied activation code ${code} to clipboard!`);
+      });
+    }
+
+    // Start loading customers when page opens
+    window.onload = loadCustomers;
+  </script>
+</body>
+</html>

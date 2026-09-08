@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../features/auth/data/auth_repository.dart';
 import 'settings_sheet.dart';
+import 'license/license_model.dart';
+import 'license/license_provider.dart';
 
 import '../features/home/presentation/home_screen.dart';
 
@@ -100,6 +102,94 @@ class AppDrawer extends ConsumerWidget {
             },
           ),
           const Divider(),
+          Consumer(
+            builder: (context, ref, child) {
+              final licenseAsync = ref.watch(licenseStatusProvider);
+              return licenseAsync.when(
+                data: (license) {
+                  if (license.isActivated) {
+                    final planName = license.plan == LicensePlan.permanent
+                        ? 'ቋሚ (Permanent)'
+                        : license.plan == LicensePlan.annual
+                            ? 'ዓመታዊ (Annual)'
+                            : 'ወርሃዊ (Monthly)';
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.green.shade300),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.verified, color: Colors.green, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'መተግበሪያው ተነቅሏል ✅',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                Text(
+                                  'ፕላን: $planName',
+                                  style: const TextStyle(fontSize: 11, color: Colors.black87),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final daysLeft = license.trialDaysRemaining;
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.amber.shade700),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.access_time_filled, color: Colors.amber, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'የ 30 ቀን ነፃ ሙከራ',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.amber,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              Text(
+                                '$daysLeft ቀናት ይቀራሉ',
+                                style: const TextStyle(fontSize: 11, color: Colors.black87),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                loading: () => const SizedBox(),
+                error: (_, __) => const SizedBox(),
+              );
+            },
+          ),
           const Spacer(),
           const Divider(),
           ListTile(

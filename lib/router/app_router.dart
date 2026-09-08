@@ -12,6 +12,9 @@ import '../features/creditor/presentation/add_creditor_screen.dart';
 import '../features/creditor/presentation/creditor_detail_screen.dart';
 import '../features/creditor/domain/creditor.dart';
 
+import '../features/license/presentation/paywall_screen.dart';
+import '../core/license/license_provider.dart';
+
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 void navigateToDebtorDetail(String debtorId) {
@@ -30,16 +33,28 @@ void navigateToCreditorDetail(String creditorId) {
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateChangesProvider);
+  final licenseState = ref.watch(licenseStatusProvider);
 
   return GoRouter(
     navigatorKey: rootNavigatorKey,
     initialLocation: '/login',
     redirect: (context, state) {
       final isLoggingIn = state.matchedLocation == '/login';
+      final isPaywall = state.matchedLocation == '/paywall';
       final isAuthenticated = authState.value != null;
       
       if (!isAuthenticated && !isLoggingIn) return '/login';
-      if (isAuthenticated && isLoggingIn) return '/';
+      
+      if (isAuthenticated) {
+        // If authenticated and trying to go to login, send to app or paywall
+        final isLicenseExpired = licenseState.value?.isExpired ?? false;
+
+        if (isLicenseExpired) {
+          if (!isPaywall) return '/paywall';
+        } else {
+          if (isLoggingIn || isPaywall) return '/';
+        }
+      }
       
       return null;
     },
@@ -47,6 +62,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/paywall',
+        builder: (context, state) => const PaywallScreen(),
       ),
       GoRoute(
         path: '/',
