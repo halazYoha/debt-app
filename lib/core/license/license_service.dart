@@ -115,43 +115,12 @@ class LicenseService {
       activationCode: activationCode,
     );
 
-    // Sync with Firestore doc for this specific user/email
+    // Sync with Firestore doc for this specific user/email only
     try {
       final docRef = _firestore.collection('app_customers').doc(userKey);
       final snapshot = await docRef.get(const GetOptions(source: Source.serverAndCache));
-      
-      bool foundActive = false;
+
       if (snapshot.exists && snapshot.data() != null) {
-        final remoteModel = LicenseModel.fromFirestore(snapshot.data()!, deviceId);
-        if (remoteModel.isActivated) {
-          await _saveLocalLicense(remoteModel, userEmail: userEmail);
-          localModel = remoteModel;
-          foundActive = true;
-        }
-      }
-
-      // If userKey doc is not activated, try fallback query by deviceId
-      if (!foundActive) {
-        final deviceQuery = await _firestore
-            .collection('app_customers')
-            .where('deviceId', isEqualTo: deviceId)
-            .get();
-
-        for (final doc in deviceQuery.docs) {
-          if (doc.exists) {
-            final remoteModel = LicenseModel.fromFirestore(doc.data(), deviceId);
-            if (remoteModel.isActivated) {
-              await _saveLocalLicense(remoteModel, userEmail: userEmail);
-              localModel = remoteModel;
-              foundActive = true;
-              break;
-            }
-          }
-        }
-      }
-
-      // If doc existed but was trial and no active doc found by deviceId, save doc data
-      if (!foundActive && snapshot.exists && snapshot.data() != null) {
         final remoteModel = LicenseModel.fromFirestore(snapshot.data()!, deviceId);
         await _saveLocalLicense(remoteModel, userEmail: userEmail);
         localModel = remoteModel;
