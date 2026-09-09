@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../creditor/data/creditor_repository.dart';
+import '../../creditor/domain/creditor.dart';
 import '../../debt/data/debt_repository.dart';
+import '../../debt/domain/debtor.dart';
 import '../../../core/ethiopian_date.dart';
 import '../../../core/offline_banner.dart';
 import '../../../core/app_drawer.dart';
@@ -68,6 +70,112 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         );
       }
     }
+  }
+
+  void _confirmDeleteDebtor(BuildContext context, WidgetRef ref, Debtor debtor) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.delete_forever, color: Colors.red),
+            SizedBox(width: 8),
+            Text('ተበዳሪ ሰርዝ'),
+          ],
+        ),
+        content: Text('የ${debtor.name} መረጃ ሙሉ በሙሉ እንዲሰረዝ ይፈልጋሉ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('ተመለስ'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await ref.read(debtRepositoryProvider).deleteDebtor(debtor.id);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('ተበዳሪው በተሳካ ሁኔታ ተሰርዟል! ✅'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('ስህተት ተከስቷል: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('ሰርዝ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteCreditor(BuildContext context, WidgetRef ref, Creditor creditor) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.delete_forever, color: Colors.red),
+            SizedBox(width: 8),
+            Text('የእኔ ዕዳ ሰርዝ'),
+          ],
+        ),
+        content: Text('የ${creditor.name} መረጃ ሙሉ በሙሉ እንዲሰረዝ ይፈልጋሉ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('ተመለስ'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await ref.read(creditorRepositoryProvider).deleteCreditor(creditor.id);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('መረጃው በተሳካ ሁኔታ ተሰርዟል! ✅'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('ስህተት ተከስቷል: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('ሰርዝ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -421,6 +529,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
+                                    if (isSettled)
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.delete_outline,
+                                          color: Colors.red,
+                                          size: 22,
+                                        ),
+                                        tooltip: 'ሰርዝ',
+                                        onPressed: () => _confirmDeleteDebtor(
+                                            context, ref, debtor),
+                                      ),
                                     IconButton(
                                       icon: Icon(
                                         Icons.call,
@@ -620,6 +739,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
+                                    if (isSettled)
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.delete_outline,
+                                          color: Colors.red,
+                                          size: 22,
+                                        ),
+                                        tooltip: 'ሰርዝ',
+                                        onPressed: () => _confirmDeleteCreditor(
+                                            context, ref, creditor),
+                                      ),
                                     IconButton(
                                       icon: Icon(
                                         Icons.call,
