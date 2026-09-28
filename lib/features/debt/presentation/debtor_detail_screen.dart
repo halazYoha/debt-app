@@ -1455,693 +1455,6 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
             ),
             const SizedBox(height: 12),
 
-            // ── Items Breakdown Card ──────────────────────────────────────
-            if (debtor.items.isNotEmpty)
-              Builder(
-                builder: (context) {
-                  // Group items by normalized date (year, month, day)
-                  final Map<DateTime, List<MapEntry<int, DebtItem>>> groupedByDate = {};
-                  for (final entry in debtor.items.asMap().entries) {
-                    final itemDate = entry.value.date ?? debtor.borrowedDate;
-                    final dateKey = DateTime(itemDate.year, itemDate.month, itemDate.day);
-                    groupedByDate.putIfAbsent(dateKey, () => []).add(entry);
-                  }
-
-                  // Sort dates descending (newest first)
-                  final sortedDates = groupedByDate.keys.toList()
-                    ..sort((a, b) => b.compareTo(a));
-
-                  final overallTotal = debtor.totalBorrowed;
-
-                  return Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Row(
-                            children: [
-                              Icon(Icons.inventory_2_outlined,
-                                  color: Color(0xFF10B981)),
-                              SizedBox(width: 8),
-                              Text(
-                                'የተበደሩ ዕቃዎች እና ጥሬ ገንዘብ ዝርዝር',
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-
-                          ...sortedDates.map((date) {
-                            final dateEntries = groupedByDate[date]!;
-                            final formattedDate = EthiopianDate.formatShort(date);
-                            final daySubtotal = dateEntries.fold<double>(
-                                0.0, (sum, entry) => sum + entry.value.subtotal);
-
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 16),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).brightness == Brightness.dark
-                                    ? Colors.grey.shade900.withValues(alpha: 0.5)
-                                    : Colors.grey.shade50,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Theme.of(context).brightness == Brightness.dark
-                                      ? Colors.grey.shade800
-                                      : Colors.grey.shade200,
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Date Header + Item Count Tag
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Row(
-                                          children: [
-                                            const Icon(Icons.calendar_today,
-                                                size: 14,
-                                                color: Color(0xFF10B981)),
-                                            const SizedBox(width: 6),
-                                            Expanded(
-                                              child: Text(
-                                                'ቀን፡ $formattedDate',
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 14,
-                                                  color: Color(0xFF10B981),
-                                                ),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF10B981)
-                                              .withValues(alpha: 0.1),
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        child: Text(
-                                          '${dateEntries.length} ዕቃ',
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xFF10B981),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 10),
-                                  const Divider(height: 1),
-                                  const SizedBox(height: 10),
-
-                                  // Item Cards for this Date
-                                  ...dateEntries.map((entry) {
-                                    final index = entry.key;
-                                    final item = entry.value;
-                                    final isCashLoan = item.unit == 'ብር' ||
-                                        item.name == 'ጥሬ ገንዘብ ብድር' ||
-                                        (item.quantity == 1 &&
-                                            item.unit == 'ብር');
-
-                                    return Container(
-                                      margin:
-                                          const EdgeInsets.only(bottom: 8),
-                                      padding: const EdgeInsets.all(10),
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context).cardColor,
-                                        borderRadius:
-                                            BorderRadius.circular(10),
-                                        border: Border.all(
-                                          color: Theme.of(context)
-                                                      .brightness ==
-                                                  Brightness.dark
-                                              ? Colors.grey.shade800
-                                              : Colors.grey.shade300,
-                                        ),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.all(6),
-                                                decoration: BoxDecoration(
-                                                  color: isCashLoan
-                                                      ? Colors.green
-                                                          .withValues(
-                                                              alpha: 0.1)
-                                                      : const Color(
-                                                              0xFF10B981)
-                                                          .withValues(
-                                                              alpha: 0.1),
-                                                  shape: BoxShape.circle,
-                                                ),
-                                                child: Icon(
-                                                  isCashLoan
-                                                      ? Icons
-                                                          .payments_outlined
-                                                      : Icons
-                                                          .shopping_bag_outlined,
-                                                  size: 16,
-                                                  color: isCashLoan
-                                                      ? Colors.green
-                                                      : const Color(
-                                                          0xFF10B981),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment
-                                                          .start,
-                                                  children: [
-                                                    Text(
-                                                      item.name,
-                                                      style: const TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 14,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 2),
-                                                    Text(
-                                                      isCashLoan
-                                                          ? 'ጥሬ ገንዘብ ብድር'
-                                                          : '${item.quantity} ${item.unit} × ${item.unitPrice.toStringAsFixed(2)} ETB',
-                                                      style: TextStyle(
-                                                        color: Colors
-                                                            .grey.shade700,
-                                                        fontSize: 12,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              const SizedBox(width: 6),
-                                              Text(
-                                                '${item.subtotal.toStringAsFixed(2)} ETB',
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 14,
-                                                  color: Color(0xFF10B981),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.end,
-                                            children: [
-                                              InkWell(
-                                                onTap: () =>
-                                                    _showEditDebtItemDialog(
-                                                        debtor,
-                                                        index,
-                                                        item),
-                                                borderRadius:
-                                                    BorderRadius.circular(6),
-                                                child: Padding(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: 6,
-                                                      vertical: 2),
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons.edit_outlined,
-                                                        size: 15,
-                                                        color: Theme.of(
-                                                                context)
-                                                            .colorScheme
-                                                            .primary,
-                                                      ),
-                                                      const SizedBox(
-                                                          width: 2),
-                                                      Text(
-                                                        'አስተካክል',
-                                                        style: TextStyle(
-                                                          fontSize: 12,
-                                                          color: Theme.of(
-                                                                  context)
-                                                              .colorScheme
-                                                              .primary,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 10),
-                                              InkWell(
-                                                onTap: () =>
-                                                    _confirmDeleteDebtItem(
-                                                        debtor,
-                                                        index,
-                                                        item),
-                                                borderRadius:
-                                                    BorderRadius.circular(6),
-                                                child: const Padding(
-                                                  padding: EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: 6,
-                                                      vertical: 2),
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons.delete_outline,
-                                                        size: 15,
-                                                        color: Colors.red,
-                                                      ),
-                                                      SizedBox(width: 2),
-                                                      Text(
-                                                        'ሰርዝ',
-                                                        style: TextStyle(
-                                                          fontSize: 12,
-                                                          color: Colors.red,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }),
-
-                                  const SizedBox(height: 4),
-                                  // Subtotal Footer for this Date
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF10B981)
-                                          .withValues(alpha: 0.08),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: const Color(0xFF10B981)
-                                            .withValues(alpha: 0.2),
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            'የቀን $formattedDate ድምር:',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 13,
-                                              color: Color(0xFF10B981),
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          '${daySubtotal.toStringAsFixed(2)} ETB',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14,
-                                            color: Color(0xFF10B981),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }),
-
-                          const Divider(height: 24, thickness: 1.5),
-
-                          // Grand Total Section across all dates
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF10B981)
-                                  .withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: const Color(0xFF10B981)
-                                    .withValues(alpha: 0.3),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Expanded(
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.functions,
-                                          size: 20,
-                                          color: Color(0xFF10B981)),
-                                      SizedBox(width: 6),
-                                      Expanded(
-                                        child: Text(
-                                          'ጠቅላላ የሁሉም ቀናት ብድር:',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14,
-                                            color: Color(0xFF10B981),
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '${overallTotal.toStringAsFixed(2)} ETB',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                    color: Color(0xFF10B981),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            if (debtor.items.isNotEmpty) const SizedBox(height: 12),
-
-            // ── Financial Summary Card ────────────────────────────────────
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.bar_chart, color: Color(0xFF10B981)),
-                        SizedBox(width: 8),
-                        Text('የዕዳ ሁኔታ',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('የክፍያ ሂደት',
-                                style: TextStyle(color: Colors.grey)),
-                            Text('${(progress * 100).toStringAsFixed(0)}%',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: LinearProgressIndicator(
-                            value: progress,
-                            minHeight: 10,
-                            backgroundColor: Colors.red.withValues(alpha: 0.15),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              progress >= 1.0
-                                  ? Colors.green
-                                  : const Color(0xFF10B981),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    _summaryRow('የተበደረበት ቀን',
-                        EthiopianDate.formatShort(debtor.borrowedDate),
-                        isDate: true),
-                    const Divider(),
-                    _summaryRow('ጠቅላላ ብድር',
-                        '${debtor.totalBorrowed.toStringAsFixed(2)} ETB'),
-                    const Divider(),
-                    _summaryRow('ተከፍሏል',
-                        '${debtor.totalPaid.toStringAsFixed(2)} ETB',
-                        isPositive: true),
-                    const Divider(),
-                    _summaryRow(
-                      'ቀሪ ዕዳ',
-                      '${debtor.remainingBalance.toStringAsFixed(2)} ETB',
-                      isLarge: true,
-                      isNegative: !isSettled,
-                      isPositive: isSettled,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // ── Repayment History Card ────────────────────────────────────
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.history, color: Color(0xFF10B981)),
-                        SizedBox(width: 8),
-                        Text(
-                          'የክፍያ ታሪክ',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    if (debtor.repayments.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8),
-                        child: Center(
-                          child: Text(
-                            'እስካሁን ምንም ክፍያ አልተመዘገበም',
-                            style: TextStyle(color: Colors.grey, fontSize: 13),
-                          ),
-                        ),
-                      )
-                    else ...[
-                      // Table header
-                      const Row(
-                        children: [
-                          Expanded(
-                            flex: 5,
-                            child: Text(
-                              'የክፍያ መጠን',
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                  fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 5,
-                            child: Text(
-                              'የተከፈለበት ቀን',
-                              textAlign: TextAlign.end,
-                              style: TextStyle(
-                                  fontSize: 12, color: Colors.grey),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Divider(),
-                      ...repayments.map((repayment) {
-                        final formattedTime =
-                            '${repayment.date.hour.toString().padLeft(2, '0')}:${repayment.date.minute.toString().padLeft(2, '0')}';
-                        final dateStr =
-                            '${EthiopianDate.formatShort(repayment.date)} ($formattedTime)';
-                        final hasNote = repayment.note != null &&
-                            repayment.note!.isNotEmpty;
-
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Padding(
-                                padding: EdgeInsets.only(top: 2),
-                                child: Icon(Icons.check_circle_outline,
-                                    size: 16, color: Colors.green),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                flex: 5,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '+ ${repayment.amount.toStringAsFixed(2)} ETB',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.green,
-                                        fontSize: 15,
-                                      ),
-                                    ),
-                                    if (hasNote) ...[
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        'ማስታወሻ: ${repayment.note}',
-                                        style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.grey[700],
-                                            fontStyle: FontStyle.italic),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                              Expanded(
-                                flex: 5,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        const Icon(Icons.calendar_today,
-                                            size: 11, color: Colors.grey),
-                                        const SizedBox(width: 4),
-                                        Flexible(
-                                          child: Text(
-                                            dateStr,
-                                            style: const TextStyle(
-                                                color: Colors.grey,
-                                                fontSize: 11),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    if (repayment.bankName != null &&
-                                        repayment.bankName!.isNotEmpty) ...[
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        children: [
-                                          const Icon(Icons.account_balance,
-                                              size: 11, color: Colors.blue),
-                                          const SizedBox(width: 4),
-                                          Flexible(
-                                            child: Text(
-                                              repayment.bankName!,
-                                              style: const TextStyle(
-                                                  color: Colors.blue,
-                                                  fontSize: 11),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        InkWell(
-                                          onTap: _isLoading
-                                              ? null
-                                              : () => _showEditRepaymentDialog(
-                                                  debtor, repayment, repayments),
-                                          borderRadius: BorderRadius.circular(4),
-                                          child: const Padding(
-                                            padding: EdgeInsets.all(4.0),
-                                            child: Icon(
-                                                Icons.edit_outlined,
-                                                size: 16,
-                                                color: Colors.blue),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        InkWell(
-                                          onTap: _isLoading
-                                              ? null
-                                              : () => _confirmDeleteRepayment(
-                                                  debtor, repayment, repayments),
-                                          borderRadius: BorderRadius.circular(4),
-                                          child: const Padding(
-                                            padding: EdgeInsets.all(4.0),
-                                            child: Icon(
-                                                Icons.delete_outline,
-                                                size: 16,
-                                                color: Colors.red),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                      const Divider(),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'ጠቅላላ የተከፈለ',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                          Text(
-                            '${debtor.totalPaid.toStringAsFixed(2)} ETB',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                              color: Colors.green,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
             // ── Action Buttons Section ────────────────────────────────────
             Row(
               children: [
@@ -2234,6 +1547,671 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
               ),
             ],
             const SizedBox(height: 20),
+            // ── Items Breakdown Card ──────────────────────────────────────
+            if (debtor.items.isNotEmpty)
+              Builder(
+                builder: (context) {
+                  // Group items by normalized date (year, month, day)
+                  final Map<DateTime, List<MapEntry<int, DebtItem>>> groupedByDate = {};
+                  for (final entry in debtor.items.asMap().entries) {
+                    final itemDate = entry.value.date ?? debtor.borrowedDate;
+                    final dateKey = DateTime(itemDate.year, itemDate.month, itemDate.day);
+                    groupedByDate.putIfAbsent(dateKey, () => []).add(entry);
+                  }
+
+                  // Sort dates descending (newest first)
+                  final sortedDates = groupedByDate.keys.toList()
+                    ..sort((a, b) => b.compareTo(a));
+
+                  final overallTotal = debtor.totalBorrowed;
+
+                  return Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.inventory_2_outlined,
+                                  color: Color(0xFF10B981)),
+                              SizedBox(width: 8),
+                              Text(
+                                'የተበደሩ ዕቃዎች እና ጥሬ ገንዘብ ዝርዝር',
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+
+                          ...sortedDates.map((date) {
+                            final dateEntries = groupedByDate[date]!;
+                            final formattedDate = EthiopianDate.formatShort(date);
+                            final daySubtotal = dateEntries.fold<double>(
+                                0.0, (sum, entry) => sum + entry.value.subtotal);
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Date Header + Item Count Tag
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.calendar_today, size: 14, color: Color(0xFF10B981)),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            'ቀን፡ $formattedDate',
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF10B981)),
+                                          ),
+                                        ],
+                                      ),
+                                      Text(
+                                        '${dateEntries.length} ዕቃ',
+                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  
+                                  // Item Cards for this Date
+                                  ...dateEntries.map((entry) {
+                                    final index = entry.key;
+                                    final item = entry.value;
+                                    final isCashLoan = item.unit == 'ብር' || item.name == 'ጥሬ ገንዘብ ብድር' || (item.quantity == 1 && item.unit == 'ብር');
+
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 6),
+                                      child: Row(
+                                        children: [
+                                          // Icon
+                                          Icon(
+                                            isCashLoan ? Icons.payments_outlined : Icons.shopping_bag_outlined,
+                                            size: 20,
+                                            color: isCashLoan ? Colors.green : const Color(0xFF10B981),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          // Name + detail
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  item.name,
+                                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                                                ),
+                                                Text(
+                                                  isCashLoan ? 'ጥሬ ገንዘብ ብድር' : '${item.quantity} ${item.unit} × ${item.unitPrice.toStringAsFixed(2)} ETB',
+                                                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          // Subtotal
+                                          Text(
+                                            '${item.subtotal.toStringAsFixed(2)} ETB',
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          // Actions
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              InkWell(
+                                                onTap: () => _showEditDebtItemDialog(debtor, index, item),
+                                                child: const Padding(
+                                                  padding: EdgeInsets.all(4),
+                                                  child: Icon(Icons.edit_outlined, size: 18, color: Colors.blue),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              InkWell(
+                                                onTap: () => _confirmDeleteDebtItem(debtor, index, item),
+                                                child: const Padding(
+                                                  padding: EdgeInsets.all(4),
+                                                  child: Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }),
+                                  const Divider(height: 16),
+                                  // Subtotal Footer for this Date
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      Text('የቀን ድምር: ', style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                                      Text('${daySubtotal.toStringAsFixed(2)} ETB', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                ],
+                              ),
+                            );
+                          }),
+
+                          const Divider(height: 24, thickness: 1.5),
+
+                          // Grand Total Section across all dates
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981)
+                                  .withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: const Color(0xFF10B981)
+                                    .withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Expanded(
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.functions,
+                                          size: 20,
+                                          color: Color(0xFF10B981)),
+                                      SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          'ጠቅላላ የሁሉም ቀናት ብድር:',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                            color: Color(0xFF10B981),
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '${overallTotal.toStringAsFixed(2)} ETB',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: Color(0xFF10B981),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            if (debtor.items.isNotEmpty) const SizedBox(height: 12),
+
+            // ── Financial Summary Card ────────────────────────────────────
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.bar_chart, color: Color(0xFF10B981)),
+                        SizedBox(width: 8),
+                        Text('የዕዳ ሁኔታ',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── Remaining Balance — Prominent First ───────────────
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 16, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: isSettled
+                            ? Colors.green.withValues(alpha: 0.08)
+                            : Colors.red.withValues(alpha: 0.07),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSettled
+                              ? Colors.green.withValues(alpha: 0.35)
+                              : Colors.red.withValues(alpha: 0.25),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'ቀሪ ዕዳ',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isSettled ? Colors.green : Colors.red,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${debtor.remainingBalance.toStringAsFixed(2)} ETB',
+                            style: TextStyle(
+                              fontSize: 30,
+                              fontWeight: FontWeight.bold,
+                              color: isSettled ? Colors.green : Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // ── Progress Bar ──────────────────────────────────────
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('የክፍያ ሂደት',
+                            style: TextStyle(
+                                color: Colors.grey, fontSize: 13)),
+                        Text(
+                          '${(progress * 100).toStringAsFixed(0)}%',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 10,
+                        backgroundColor:
+                            Colors.red.withValues(alpha: 0.15),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          progress >= 1.0
+                              ? Colors.green
+                              : const Color(0xFF10B981),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    _summaryRow('ጠቅላላ ብድር',
+                        '${debtor.totalBorrowed.toStringAsFixed(2)} ETB'),
+                    const Divider(),
+                    _summaryRow('ተከፍሏል',
+                        '${debtor.totalPaid.toStringAsFixed(2)} ETB',
+                        isPositive: true),
+                    const Divider(),
+                    _summaryRow(
+                      'የተበደረበት ቀን',
+                      EthiopianDate.formatShort(debtor.borrowedDate),
+                      isDate: true,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // ── Repayment History Card ────────────────────────────────────
+            Builder(
+              builder: (context) {
+                // 1. Create a unified list of events (Borrowings & Payments) to calculate accurate historical balances
+                final List<Map<String, dynamic>> events = [];
+                
+                for (int i = 0; i < debtor.items.length; i++) {
+                  final item = debtor.items[i];
+                  events.add({
+                    'type': 'borrow',
+                    'date': item.date ?? debtor.borrowedDate,
+                    'amount': item.subtotal,
+                    'title': item.name,
+                    'originalIndex': i,
+                    'item': item,
+                  });
+                }
+                
+                for (int i = 0; i < repayments.length; i++) {
+                  final r = repayments[i];
+                  events.add({
+                    'type': 'repayment',
+                    'date': r.date,
+                    'amount': r.amount,
+                    'repayment': r,
+                    'originalIndex': i,
+                  });
+                }
+                
+                // Sort ascending by date for ledger calculation
+                events.sort((a, b) => (a['date'] as DateTime).compareTo(b['date'] as DateTime));
+                
+                // Calculate forward running balance
+                double runningBal = 0.0;
+                for (var e in events) {
+                  if (e['type'] == 'borrow') {
+                    runningBal += e['amount'] as double;
+                  } else {
+                    runningBal -= e['amount'] as double;
+                  }
+                  e['balanceAfter'] = runningBal;
+                }
+                
+                // Now we group by Date (Descending) for display.
+                // For the History list, we ONLY want to show repayments (implicit balance).
+                final Map<DateTime, List<Map<String, dynamic>>> repaymentDayGroups = {};
+                for (var e in events) {
+                  if (e['type'] == 'repayment') {
+                    final d = e['date'] as DateTime;
+                    final dayKey = DateTime(d.year, d.month, d.day);
+                    repaymentDayGroups.putIfAbsent(dayKey, () => []).add(e);
+                  }
+                }
+                
+                final sortedRepaymentDays = repaymentDayGroups.keys.toList()..sort((a, b) => b.compareTo(a));
+
+                // 2. Build Daily Borrowed Summary (From borrow events)
+                // We still want the summary at the top based on all borrow events
+                final Map<DateTime, List<Map<String, dynamic>>> borrowDayGroups = {};
+                for (var e in events) {
+                  if (e['type'] == 'borrow') {
+                    final d = e['date'] as DateTime;
+                    final dayKey = DateTime(d.year, d.month, d.day);
+                    borrowDayGroups.putIfAbsent(dayKey, () => []).add(e);
+                  }
+                }
+                final sortedBorrowDays = borrowDayGroups.keys.toList()..sort((a, b) => b.compareTo(a));
+
+                final List<Widget> dailySummaryWidgets = [];
+                for (var day in sortedBorrowDays) {
+                  final dayEvents = borrowDayGroups[day]!;
+                  final borrowedAmount = dayEvents.fold(0.0, (s, e) => s + (e['amount'] as double));
+                  if (borrowedAmount > 0) {
+                    dailySummaryWidgets.add(
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'ቀን፡ ${EthiopianDate.formatShort(day)}',
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                            ),
+                            Text(
+                              '+ ${borrowedAmount.toStringAsFixed(2)} ETB',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.orange),
+                            ),
+                          ],
+                        ),
+                      )
+                    );
+                  }
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Daily Borrowed Summary Section
+                    if (dailySummaryWidgets.isNotEmpty) ...[
+                      Card(
+                        elevation: 0,
+                        color: Colors.orange.withValues(alpha: 0.05),
+                        shape: RoundedRectangleBorder(
+                          side: BorderSide(color: Colors.orange.withValues(alpha: 0.3)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.summarize_outlined, color: Colors.orange, size: 18),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'የተጨመሩ ዕዳዎች ማጠቃለያ (በቀን)',
+                                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange, fontSize: 14),
+                                  ),
+                                ],
+                              ),
+                              const Divider(height: 16),
+                              ...dailySummaryWidgets,
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // Repayment History Card (Implicit balance)
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.history, color: Color(0xFF10B981)),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'የክፍያ ታሪክ',
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            
+                            if (sortedRepaymentDays.isEmpty)
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 8),
+                                child: Center(
+                                  child: Text(
+                                    'እስካሁን ምንም ታሪክ አልተመዘገበም',
+                                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                                  ),
+                                ),
+                              )
+                            else
+                              ...sortedRepaymentDays.map((day) {
+                                final dayEvents = repaymentDayGroups[day]!..sort((a, b) => (b['date'] as DateTime).compareTo(a['date'] as DateTime));
+                                final formattedDay = EthiopianDate.formatShort(day);
+
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).brightness == Brightness.dark
+                                        ? Colors.grey.shade900.withValues(alpha: 0.4)
+                                        : Colors.grey.shade50,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Theme.of(context).brightness == Brightness.dark
+                                          ? Colors.grey.shade800
+                                          : Colors.grey.shade200,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Day Header
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.calendar_today, size: 13, color: Color(0xFF10B981)),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              'ቀን፡ $formattedDay',
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF10B981)),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const Divider(height: 1),
+                                      
+                                      // Events (Only Repayments)
+                                      ...dayEvents.map((ev) {
+                                        final amount = ev['amount'] as double;
+                                        final balanceAfter = ev['balanceAfter'] as double;
+                                        final time = ev['date'] as DateTime;
+                                        final formattedTime = '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+                                        
+                                        return Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Container(
+                                                    margin: const EdgeInsets.only(top: 2),
+                                                    padding: const EdgeInsets.all(6),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.green.withValues(alpha: 0.1),
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: const Icon(
+                                                      Icons.check,
+                                                      size: 12,
+                                                      color: Colors.green,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Text(
+                                                          '+ ${amount.toStringAsFixed(2)} ETB (ክፍያ)',
+                                                          style: const TextStyle(
+                                                            fontWeight: FontWeight.bold,
+                                                            color: Colors.green,
+                                                            fontSize: 15,
+                                                          ),
+                                                        ),
+                                                        if (ev['repayment'].note != null && (ev['repayment'].note as String).isNotEmpty) ...[
+                                                          const SizedBox(height: 2),
+                                                          Text(ev['repayment'].note, style: TextStyle(fontSize: 12, color: Colors.grey[600], fontStyle: FontStyle.italic)),
+                                                        ],
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                                    children: [
+                                                      Text(formattedTime, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                                      const SizedBox(height: 6),
+                                                      Row(
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        children: [
+                                                          InkWell(
+                                                            onTap: () => _showEditRepaymentDialog(debtor, ev['repayment'], repayments),
+                                                            child: const Padding(
+                                                              padding: EdgeInsets.all(4),
+                                                              child: Icon(Icons.edit_outlined, size: 16, color: Colors.blue),
+                                                            ),
+                                                          ),
+                                                          InkWell(
+                                                            onTap: () => _confirmDeleteRepayment(debtor, ev['repayment'], repayments),
+                                                            child: const Padding(
+                                                              padding: EdgeInsets.all(4),
+                                                              child: Icon(Icons.delete_outline, size: 16, color: Colors.red),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  )
+                                                ],
+                                              ),
+                                              const SizedBox(height: 8),
+                                              // Balance After
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                                decoration: BoxDecoration(
+                                                  color: balanceAfter <= 0 ? Colors.green.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.1),
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      balanceAfter <= 0 ? Icons.check_circle_outline : Icons.account_balance_wallet_outlined,
+                                                      size: 13,
+                                                      color: balanceAfter <= 0 ? Colors.green : Colors.grey[700],
+                                                    ),
+                                                    const SizedBox(width: 6),
+                                                    Expanded(
+                                                      child: Text(
+                                                        balanceAfter <= 0 ? 'ዕዳ ሙሉ በሙሉ ተከፍሏል!' : 'ቀሪ ዕዳ ከክፍያ በኋላ:',
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight: FontWeight.w600,
+                                                          color: balanceAfter <= 0 ? Colors.green : Colors.grey[800],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    if (balanceAfter > 0)
+                                                      Text(
+                                                        '${balanceAfter.toStringAsFixed(2)} ETB',
+                                                        style: TextStyle(
+                                                          fontSize: 13,
+                                                          fontWeight: FontWeight.bold,
+                                                          color: Colors.grey[800],
+                                                        ),
+                                                      ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                              const Divider(),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'ጠቅላላ የተከፈለ',
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                  ),
+                                  Text(
+                                    '${debtor.totalPaid.toStringAsFixed(2)} ETB',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                      color: Colors.green,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+
+
           ],
         ),
       ),

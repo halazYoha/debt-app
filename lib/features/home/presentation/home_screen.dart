@@ -9,6 +9,8 @@ import '../../debt/domain/debtor.dart';
 import '../../../core/ethiopian_date.dart';
 import '../../../core/offline_banner.dart';
 import '../../../core/app_drawer.dart';
+import '../../../core/app_error_mapper.dart';
+import '../../auth/data/auth_repository.dart';
 
 enum DebtorFilter { all, over50k }
 enum HomeTab { debtors, creditors }
@@ -593,7 +595,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(child: Text('Error: $error')),
+      error: (error, stack) => _buildErrorState(context, ref, error),
     );
   }
 
@@ -803,7 +805,69 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(child: Text('Error: $error')),
+      error: (error, stack) => _buildErrorState(context, ref, error),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context, WidgetRef ref, dynamic error) {
+    final message = AppErrorMapper.toAmharic(error);
+    final isPermissionOrAuth = error.toString().toLowerCase().contains('permission') ||
+        error.toString().toLowerCase().contains('unauthenticated');
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.shield_outlined, size: 48, color: Colors.orange),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, height: 1.5),
+            ),
+            const SizedBox(height: 20),
+            if (isPermissionOrAuth) ...[
+              ElevatedButton.icon(
+                onPressed: () {
+                  ref.read(authRepositoryProvider).signOut();
+                },
+                icon: const Icon(Icons.logout_rounded),
+                label: const Text('ከመለያ ውጣ እና እንደገና ግባ'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF10B981),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ] else ...[
+              ElevatedButton.icon(
+                onPressed: () {
+                  ref.invalidate(debtorsProvider);
+                  ref.invalidate(creditorsProvider);
+                },
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('ደግመው ይሞክሩ'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF10B981),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

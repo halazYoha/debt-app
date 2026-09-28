@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../features/auth/data/auth_repository.dart';
-import 'settings_sheet.dart';
 import 'license/license_model.dart';
 import 'license/license_provider.dart';
 
@@ -81,24 +80,6 @@ class AppDrawer extends ConsumerWidget {
               Navigator.pop(context);
               ref.read(activeHomeTabProvider.notifier).selectTab(HomeTab.creditors);
               context.go('/');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings_rounded, color: Color(0xFF3B82F6)),
-            title: const Text(
-              'ቅንብሮች',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            onTap: () {
-              Navigator.pop(context); // Close drawer
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                builder: (_) => const SettingsSheet(),
-              );
             },
           ),
           const Divider(),

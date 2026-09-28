@@ -53,7 +53,7 @@ class AppErrorMapper {
     if (error is FirebaseException) {
       switch (error.code) {
         case 'permission-denied':
-          return 'ይህን እርምጃ ለመፈጸም ፈቃድ የለዎትም።';
+          return 'መረጃ የማግኘት ፈቃድ ችግር አጋጥሟል። (መረጃዎ በፍጹም አልጠፋም!) እባክዎ ከመለያዎ ወጥተው እንደገና ይግቡ።';
         case 'unavailable':
           return 'ሰርቨሩ ለጊዜው አይሰራም። ኔትወርክዎን ወይም ትንሽ ቆይተው ደግመው ይሞክሩ።';
         case 'deadline-exceeded':
@@ -113,8 +113,9 @@ class AppErrorMapper {
       return 'ትክክለኛ ኢሜይል አድራሻ ያስገቡ።';
     }
 
-    if (errorString.contains('permission-denied')) {
-      return 'ይህን እርምጃ ለመፈጸም ፈቃድ የለዎትም።';
+    if (errorString.contains('permission-denied') ||
+        errorString.contains('permission_denied')) {
+      return 'መረጃ የማግኘት ፈቃድ ችግር አጋጥሟል። (መረጃዎ በፍጹም አልጠፋም!) እባክዎ ከመለያዎ ወጥተው እንደገና ይግቡ።';
     }
 
     final rawText = error.toString();

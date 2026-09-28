@@ -1445,252 +1445,89 @@ class _CreditorDetailScreenState extends ConsumerState<CreditorDetailScreen> {
                               final daySubtotal = dateEntries.fold<double>(
                                   0.0, (sum, e) => sum + e.value.subtotal);
 
-                              return Container(
-                                margin: const EdgeInsets.only(bottom: 16),
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.grey.shade900
-                                      : Colors.grey.shade50,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: const Color(0xFFF59E0B)
-                                        .withValues(alpha: 0.3),
-                                    width: 1,
-                                  ),
-                                ),
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     // Date Section Header
                                     Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Expanded(
-                                          child: Row(
-                                            children: [
-                                              const Icon(Icons.calendar_today,
-                                                  size: 14,
-                                                  color: Color(0xFFF59E0B)),
-                                              const SizedBox(width: 6),
-                                              Expanded(
-                                                child: Text(
-                                                  'ቀን፡ $formattedDate',
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 14,
-                                                    color: Color(0xFFF59E0B),
-                                                  ),
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFF59E0B)
-                                                .withValues(alpha: 0.1),
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          child: Text(
-                                            '${dateEntries.length} ዕቃ',
-                                            style: const TextStyle(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w600,
-                                              color: Color(0xFFF59E0B),
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.calendar_today, size: 14, color: Color(0xFFF59E0B)),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              'ቀን፡ $formattedDate',
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFFF59E0B)),
                                             ),
-                                          ),
+                                          ],
+                                        ),
+                                        Text(
+                                          '${dateEntries.length} ዕቃ',
+                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey),
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 10),
-                                    const Divider(height: 1),
-                                    const SizedBox(height: 10),
+                                    const SizedBox(height: 8),
 
                                     // Item Cards for this Date
                                     ...dateEntries.map((entry) {
                                       final index = entry.key;
                                       final item = entry.value;
-                                      final isCashLoan = item.unit == 'ብር' ||
-                                          item.name == 'ጥሬ ገንዘብ ብድር' ||
-                                          (item.quantity == 1 &&
-                                              item.unit == 'ብር');
+                                      final isCashLoan = item.unit == 'ብር' || item.name == 'ጥሬ ገንዘብ ብድር' || (item.quantity == 1 && item.unit == 'ብር');
 
-                                      return Container(
-                                        margin:
-                                            const EdgeInsets.only(bottom: 8),
-                                        padding: const EdgeInsets.all(10),
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context).cardColor,
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                          border: Border.all(
-                                            color: Theme.of(context)
-                                                        .brightness ==
-                                                    Brightness.dark
-                                                ? Colors.grey.shade800
-                                                : Colors.grey.shade300,
-                                          ),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 6),
+                                        child: Row(
                                           children: [
-                                            Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Container(
-                                                  padding:
-                                                      const EdgeInsets.all(6),
-                                                  decoration: BoxDecoration(
-                                                    color: isCashLoan
-                                                        ? Colors.green
-                                                            .withValues(
-                                                                alpha: 0.1)
-                                                        : const Color(
-                                                                0xFFF59E0B)
-                                                            .withValues(
-                                                                alpha: 0.1),
-                                                    shape: BoxShape.circle,
+                                            // Icon
+                                            Icon(
+                                              isCashLoan ? Icons.payments_outlined : Icons.shopping_bag_outlined,
+                                              size: 20,
+                                              color: isCashLoan ? Colors.green : const Color(0xFFF59E0B),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            // Name + detail
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    item.name,
+                                                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                                                   ),
-                                                  child: Icon(
-                                                    isCashLoan
-                                                        ? Icons
-                                                            .payments_outlined
-                                                        : Icons
-                                                            .shopping_bag_outlined,
-                                                    size: 16,
-                                                    color: isCashLoan
-                                                        ? Colors.green
-                                                        : const Color(
-                                                            0xFFF59E0B),
+                                                  Text(
+                                                    isCashLoan ? 'ጥሬ ገንዘብ ብድር' : '${item.quantity} ${item.unit} × ${item.unitPrice.toStringAsFixed(2)} ETB',
+                                                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            // Subtotal
+                                            Text(
+                                              '${item.subtotal.toStringAsFixed(2)} ETB',
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            // Actions
+                                            Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                InkWell(
+                                                  onTap: () => _showEditDebtItemDialog(creditor, index, item),
+                                                  child: const Padding(
+                                                    padding: EdgeInsets.all(4),
+                                                    child: Icon(Icons.edit_outlined, size: 18, color: Colors.blue),
                                                   ),
                                                 ),
                                                 const SizedBox(width: 8),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Text(
-                                                        item.name,
-                                                        style: const TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          fontSize: 14,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(height: 2),
-                                                      Text(
-                                                        isCashLoan
-                                                            ? 'ጥሬ ገንዘብ ብድር'
-                                                            : '${item.quantity} ${item.unit} × ${item.unitPrice.toStringAsFixed(2)} ETB',
-                                                        style: TextStyle(
-                                                          color: Colors
-                                                              .grey.shade700,
-                                                          fontSize: 12,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 6),
-                                                Text(
-                                                  '${item.subtotal.toStringAsFixed(2)} ETB',
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 14,
-                                                    color: Color(0xFFF59E0B),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 6),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.end,
-                                              children: [
                                                 InkWell(
-                                                  onTap: () =>
-                                                      _showEditDebtItemDialog(
-                                                          creditor,
-                                                          index,
-                                                          item),
-                                                  borderRadius:
-                                                      BorderRadius.circular(6),
-                                                  child: Padding(
-                                                    padding: const EdgeInsets
-                                                        .symmetric(
-                                                        horizontal: 6,
-                                                        vertical: 2),
-                                                    child: Row(
-                                                      children: [
-                                                        Icon(
-                                                          Icons.edit_outlined,
-                                                          size: 15,
-                                                          color: Theme.of(
-                                                                  context)
-                                                              .colorScheme
-                                                              .primary,
-                                                        ),
-                                                        const SizedBox(
-                                                            width: 2),
-                                                        Text(
-                                                          'አስተካክል',
-                                                          style: TextStyle(
-                                                            fontSize: 12,
-                                                            color: Theme.of(
-                                                                    context)
-                                                                .colorScheme
-                                                                .primary,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 10),
-                                                InkWell(
-                                                  onTap: () =>
-                                                      _confirmDeleteDebtItem(
-                                                          creditor,
-                                                          index,
-                                                          item),
-                                                  borderRadius:
-                                                      BorderRadius.circular(6),
+                                                  onTap: () => _confirmDeleteDebtItem(creditor, index, item),
                                                   child: const Padding(
-                                                    padding: EdgeInsets
-                                                        .symmetric(
-                                                        horizontal: 6,
-                                                        vertical: 2),
-                                                    child: Row(
-                                                      children: [
-                                                        Icon(
-                                                          Icons.delete_outline,
-                                                          size: 15,
-                                                          color: Colors.red,
-                                                        ),
-                                                        SizedBox(width: 2),
-                                                        Text(
-                                                          'ሰርዝ',
-                                                          style: TextStyle(
-                                                            fontSize: 12,
-                                                            color: Colors.red,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
+                                                    padding: EdgeInsets.all(4),
+                                                    child: Icon(Icons.delete_outline, size: 18, color: Colors.red),
                                                   ),
                                                 ),
                                               ],
@@ -1700,39 +1537,16 @@ class _CreditorDetailScreenState extends ConsumerState<CreditorDetailScreen> {
                                       );
                                     }),
 
+                                    const Divider(height: 16),
                                     // Daily Subtotal Box
-                                    Container(
-                                      margin: const EdgeInsets.only(top: 4),
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF59E0B)
-                                            .withValues(alpha: 0.08),
-                                        borderRadius:
-                                            BorderRadius.circular(8),
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            'የቀን $formattedDate ድምር:',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 13,
-                                            ),
-                                          ),
-                                          Text(
-                                            '${daySubtotal.toStringAsFixed(2)} ETB',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14,
-                                              color: Color(0xFFF59E0B),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        Text('የቀን ድምር: ', style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                                        Text('${daySubtotal.toStringAsFixed(2)} ETB', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                      ],
                                     ),
+                                    const SizedBox(height: 8),
                                   ],
                                 ),
                               );
@@ -1861,229 +1675,494 @@ class _CreditorDetailScreenState extends ConsumerState<CreditorDetailScreen> {
               const SizedBox(height: 12),
 
               // ── Repayment History Card ────────────────────────────────────
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
+              Builder(
+                builder: (context) {
+                  // Build unified event list for balance calculation
+                  final List<Map<String, dynamic>> events = [];
+
+                  for (int i = 0; i < creditor.items.length; i++) {
+                    final item = creditor.items[i];
+                    events.add({
+                      'type': 'borrow',
+                      'date': item.date ?? creditor.borrowedDate,
+                      'amount': item.subtotal,
+                      'title': item.name,
+                    });
+                  }
+
+                  for (int i = 0; i < repayments.length; i++) {
+                    final r = repayments[i];
+                    events.add({
+                      'type': 'repayment',
+                      'date': r.date,
+                      'amount': r.amount,
+                      'repayment': r,
+                    });
+                  }
+
+                  // Sort ascending for balance calculation
+                  events.sort((a, b) =>
+                      (a['date'] as DateTime).compareTo(b['date'] as DateTime));
+
+                  // Forward running balance
+                  double runningBal = 0.0;
+                  for (var e in events) {
+                    if (e['type'] == 'borrow') {
+                      runningBal += e['amount'] as double;
+                    } else {
+                      runningBal -= e['amount'] as double;
+                    }
+                    e['balanceAfter'] = runningBal;
+                  }
+
+                  // Group repayments by day (descending) for history list
+                  final Map<DateTime, List<Map<String, dynamic>>>
+                      repaymentDayGroups = {};
+                  for (var e in events) {
+                    if (e['type'] == 'repayment') {
+                      final d = e['date'] as DateTime;
+                      final dayKey = DateTime(d.year, d.month, d.day);
+                      repaymentDayGroups.putIfAbsent(dayKey, () => []).add(e);
+                    }
+                  }
+                  final sortedRepaymentDays = repaymentDayGroups.keys.toList()
+                    ..sort((a, b) => b.compareTo(a));
+
+                  // Group borrows by day for summary section
+                  final Map<DateTime, double> borrowByDay = {};
+                  for (var e in events) {
+                    if (e['type'] == 'borrow') {
+                      final d = e['date'] as DateTime;
+                      final dayKey = DateTime(d.year, d.month, d.day);
+                      borrowByDay[dayKey] =
+                          (borrowByDay[dayKey] ?? 0) + (e['amount'] as double);
+                    }
+                  }
+                  final sortedBorrowDays = borrowByDay.keys.toList()
+                    ..sort((a, b) => b.compareTo(a));
+
+                  return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.history, color: Color(0xFFF59E0B)),
-                          SizedBox(width: 8),
-                          Text(
-                            'ለአቅራቢው የተከፈለ ታሪክ',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
+                      // ── Daily Borrowed Summary ──────────────────────────────
+                      if (sortedBorrowDays.isNotEmpty) ...[
+                        Card(
+                          elevation: 0,
+                          color: Colors.orange.withValues(alpha: 0.05),
+                          shape: RoundedRectangleBorder(
+                            side: BorderSide(
+                                color: Colors.orange.withValues(alpha: 0.3)),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      if (repayments.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8),
-                          child: Center(
-                            child: Text(
-                              'እስካሁን ምንም ክፍያ አልተመዘገበም',
-                              style:
-                                  TextStyle(color: Colors.grey, fontSize: 13),
-                            ),
-                          ),
-                        )
-                      else ...[
-                        const Row(
-                          children: [
-                            Expanded(
-                              flex: 5,
-                              child: Text(
-                                'የክፍያ መጠን',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                    fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 5,
-                              child: Text(
-                                'የተከፈለበት ቀን',
-                                textAlign: TextAlign.end,
-                                style: TextStyle(
-                                    fontSize: 12, color: Colors.grey),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Divider(),
-                        ...repayments.map((repayment) {
-                          final formattedTime =
-                              '${repayment.date.hour.toString().padLeft(2, '0')}:${repayment.date.minute.toString().padLeft(2, '0')}';
-                          final dateStr =
-                              '${EthiopianDate.formatShort(repayment.date)} ($formattedTime)';
-                          final hasNote = repayment.note != null &&
-                              repayment.note!.isNotEmpty;
-
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            child: Row(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Padding(
-                                  padding: EdgeInsets.only(top: 2),
-                                  child: Icon(Icons.check_circle_outline,
-                                      size: 16, color: Colors.green),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  flex: 5,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '+ ${repayment.amount.toStringAsFixed(2)} ETB',
-                                        style: const TextStyle(
+                                const Row(
+                                  children: [
+                                    Icon(Icons.summarize_outlined,
+                                        color: Colors.orange, size: 18),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'የተጨመሩ ዕዳዎች ማጠቃለያ (በቀን)',
+                                      style: TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.green,
-                                          fontSize: 15,
-                                        ),
-                                      ),
-                                      if (hasNote) ...[
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          'ማስታወሻ: ${repayment.note}',
-                                          style: TextStyle(
-                                              fontSize: 11,
-                                              color: Colors.grey[700],
-                                              fontStyle: FontStyle.italic),
-                                        ),
-                                      ],
-                                      if (repayment.bankName != null &&
-                                          repayment.bankName!.isNotEmpty) ...[
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            const Icon(
-                                                Icons.account_balance_outlined,
-                                                size: 12,
-                                                color: Color(0xFFF59E0B)),
-                                            const SizedBox(width: 4),
-                                            Flexible(
-                                              child: Text(
-                                                repayment.bankName!,
-                                                style: const TextStyle(
-                                                  fontSize: 11,
-                                                  color: Color(0xFFF59E0B),
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ],
-                                  ),
+                                          color: Colors.orange,
+                                          fontSize: 14),
+                                    ),
+                                  ],
                                 ),
-                                Expanded(
-                                  flex: 5,
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Row(
+                                const Divider(height: 16),
+                                ...sortedBorrowDays.map((day) => Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 4),
+                                      child: Row(
                                         mainAxisAlignment:
-                                            MainAxisAlignment.end,
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
-                                          const Icon(Icons.calendar_today,
-                                              size: 11, color: Colors.grey),
-                                          const SizedBox(width: 4),
-                                          Flexible(
-                                            child: Text(
-                                              dateStr,
-                                              style: const TextStyle(
-                                                  color: Colors.grey,
-                                                  fontSize: 11),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
+                                          Text(
+                                            'ቀን፡ ${EthiopianDate.formatShort(day)}',
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 13),
+                                          ),
+                                          Text(
+                                            '+ ${borrowByDay[day]!.toStringAsFixed(2)} ETB',
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 13,
+                                                color: Colors.orange),
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          InkWell(
-                                            onTap: _isLoading
-                                                ? null
-                                                : () =>
-                                                    _showEditRepaymentDialog(
-                                                        creditor,
-                                                        repayment,
-                                                        repayments),
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                            child: const Padding(
-                                              padding: EdgeInsets.all(4.0),
-                                              child: Icon(
-                                                  Icons.edit_outlined,
-                                                  size: 16,
-                                                  color: Colors.blue),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          InkWell(
-                                            onTap: _isLoading
-                                                ? null
-                                                : () =>
-                                                    _confirmDeleteRepayment(
-                                                        creditor,
-                                                        repayment,
-                                                        repayments),
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                            child: const Padding(
-                                              padding: EdgeInsets.all(4.0),
-                                              child: Icon(
-                                                  Icons.delete_outline,
-                                                  size: 16,
-                                                  color: Colors.red),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                                    )),
                               ],
                             ),
-                          );
-                        }),
-                        const Divider(),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'ጠቅላላ የተከፈለ',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 14),
-                            ),
-                            Text(
-                              '${creditor.totalPaid.toStringAsFixed(2)} ETB',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                                color: Colors.green,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
+                        const SizedBox(height: 16),
                       ],
+
+                      // ── Repayment History ───────────────────────────────────
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.history,
+                                      color: Color(0xFF10B981)),
+                                  SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'የክፍያ ታሪክ',
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              if (sortedRepaymentDays.isEmpty)
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 8),
+                                  child: Center(
+                                    child: Text(
+                                      'እስካሁን ምንም ታሪክ አልተመዘገበም',
+                                      style: TextStyle(
+                                          color: Colors.grey, fontSize: 13),
+                                    ),
+                                  ),
+                                )
+                              else
+                                ...sortedRepaymentDays.map((day) {
+                                  final dayEvents =
+                                      repaymentDayGroups[day]!
+                                        ..sort((a, b) =>
+                                            (b['date'] as DateTime).compareTo(
+                                                a['date'] as DateTime));
+                                  final formattedDay =
+                                      EthiopianDate.formatShort(day);
+
+                                  return Container(
+                                    margin:
+                                        const EdgeInsets.only(bottom: 16),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? Colors.grey.shade900
+                                              .withValues(alpha: 0.4)
+                                          : Colors.grey.shade50,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.grey.shade800
+                                            : Colors.grey.shade200,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 10),
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.calendar_today,
+                                                  size: 13,
+                                                  color: Color(0xFF10B981)),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                'ቀን፡ $formattedDay',
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 13,
+                                                    color: Color(0xFF10B981)),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const Divider(height: 1),
+                                        ...dayEvents.map((ev) {
+                                          final amount =
+                                              ev['amount'] as double;
+                                          final balanceAfter =
+                                              ev['balanceAfter'] as double;
+                                          final time =
+                                              ev['date'] as DateTime;
+                                          final formattedTime =
+                                              '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+                                          final repayment = ev['repayment'];
+                                          final hasNote = repayment.note !=
+                                                  null &&
+                                              (repayment.note as String)
+                                                  .isNotEmpty;
+                                          final hasBankName =
+                                              repayment.bankName != null &&
+                                                  (repayment.bankName
+                                                          as String)
+                                                      .isNotEmpty;
+
+                                          return Padding(
+                                            padding: const EdgeInsets.all(12),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Container(
+                                                      margin: const EdgeInsets
+                                                          .only(top: 2),
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              6),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.green
+                                                            .withValues(
+                                                                alpha: 0.1),
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                      child: const Icon(
+                                                          Icons.check,
+                                                          size: 12,
+                                                          color: Colors.green),
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          Text(
+                                                            '+ ${amount.toStringAsFixed(2)} ETB (ክፍያ)',
+                                                            style:
+                                                                const TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              color:
+                                                                  Colors.green,
+                                                              fontSize: 15,
+                                                            ),
+                                                          ),
+                                                          if (hasNote) ...[
+                                                            const SizedBox(
+                                                                height: 2),
+                                                            Text(
+                                                              repayment.note,
+                                                              style: TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: Colors
+                                                                      .grey[600],
+                                                                  fontStyle:
+                                                                      FontStyle
+                                                                          .italic),
+                                                            ),
+                                                          ],
+                                                          if (hasBankName) ...[
+                                                            const SizedBox(
+                                                                height: 4),
+                                                            Row(children: [
+                                                              const Icon(
+                                                                  Icons
+                                                                      .account_balance_outlined,
+                                                                  size: 12,
+                                                                  color: Color(
+                                                                      0xFFF59E0B)),
+                                                              const SizedBox(
+                                                                  width: 4),
+                                                              Text(
+                                                                repayment
+                                                                    .bankName,
+                                                                style: const TextStyle(
+                                                                    fontSize:
+                                                                        11,
+                                                                    color: Color(
+                                                                        0xFFF59E0B),
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w600),
+                                                              ),
+                                                            ]),
+                                                          ],
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .end,
+                                                      children: [
+                                                        Text(formattedTime,
+                                                            style:
+                                                                const TextStyle(
+                                                                    fontSize:
+                                                                        11,
+                                                                    color: Colors
+                                                                        .grey)),
+                                                        const SizedBox(
+                                                            height: 6),
+                                                        Row(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          children: [
+                                                            InkWell(
+                                                              onTap: _isLoading
+                                                                  ? null
+                                                                  : () => _showEditRepaymentDialog(
+                                                                      creditor,
+                                                                      repayment,
+                                                                      repayments),
+                                                              child: const Padding(
+                                                                padding:
+                                                                    EdgeInsets
+                                                                        .all(4),
+                                                                child: Icon(
+                                                                    Icons
+                                                                        .edit_outlined,
+                                                                    size: 16,
+                                                                    color: Colors
+                                                                        .blue),
+                                                              ),
+                                                            ),
+                                                            InkWell(
+                                                              onTap: _isLoading
+                                                                  ? null
+                                                                  : () => _confirmDeleteRepayment(
+                                                                      creditor,
+                                                                      repayment,
+                                                                      repayments),
+                                                              child: const Padding(
+                                                                padding:
+                                                                    EdgeInsets
+                                                                        .all(4),
+                                                                child: Icon(
+                                                                    Icons
+                                                                        .delete_outline,
+                                                                    size: 16,
+                                                                    color: Colors
+                                                                        .red),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 8),
+                                                // Remaining balance after payment
+                                                Container(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 6),
+                                                  decoration: BoxDecoration(
+                                                    color: balanceAfter <= 0
+                                                        ? Colors.green
+                                                            .withValues(
+                                                                alpha: 0.08)
+                                                        : Colors.grey
+                                                            .withValues(
+                                                                alpha: 0.1),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
+                                                  ),
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(
+                                                        balanceAfter <= 0
+                                                            ? Icons
+                                                                .check_circle_outline
+                                                            : Icons
+                                                                .account_balance_wallet_outlined,
+                                                        size: 13,
+                                                        color: balanceAfter <=
+                                                                0
+                                                            ? Colors.green
+                                                            : Colors.grey[700],
+                                                      ),
+                                                      const SizedBox(width: 6),
+                                                      Expanded(
+                                                        child: Text(
+                                                          balanceAfter <= 0
+                                                              ? 'ዕዳ ሙሉ በሙሉ ተከፍሏል!'
+                                                              : 'ቀሪ ዕዳ ከክፍያ በኋላ:',
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            color: balanceAfter <=
+                                                                    0
+                                                                ? Colors.green
+                                                                : Colors
+                                                                    .grey[800],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      if (balanceAfter > 0)
+                                                        Text(
+                                                          '${balanceAfter.toStringAsFixed(2)} ETB',
+                                                          style: TextStyle(
+                                                            fontSize: 13,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color:
+                                                                Colors.grey[800],
+                                                          ),
+                                                        ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }),
+                                      ],
+                                    ),
+                                  );
+                                }),
+                              if (sortedRepaymentDays.isNotEmpty) ...[
+                                const Divider(),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('ጠቅላላ የተከፈለ',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14)),
+                                    Text(
+                                      '${creditor.totalPaid.toStringAsFixed(2)} ETB',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                          color: Colors.green),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
-                  ),
-                ),
+                  );
+                },
               ),
+
+
 
               const SizedBox(height: 20),
 

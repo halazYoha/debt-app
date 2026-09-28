@@ -6,9 +6,6 @@ import 'router/app_router.dart';
 import 'core/theme.dart';
 import 'firebase_options.dart';
 
-import 'core/notification_service.dart';
-import 'core/background_worker.dart';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -23,17 +20,6 @@ void main() async {
       persistenceEnabled: true,
       cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
     );
-
-    // Initialize notification service & background worker
-    await NotificationService().initialize(
-      onSelectNotification: (debtorId) {
-        if (debtorId != null && debtorId.isNotEmpty) {
-          navigateToDebtorDetail(debtorId);
-        }
-      },
-    );
-    await NotificationService().requestPermissions();
-    await BackgroundWorker.initialize();
   } catch (e) {
     debugPrint('Firebase init failed: $e');
   }
