@@ -14,6 +14,7 @@ import '../features/creditor/domain/creditor.dart';
 
 import '../features/license/presentation/paywall_screen.dart';
 import '../core/license/license_provider.dart';
+import '../features/inventory/presentation/stock_inventory_screen.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -100,6 +101,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                 initialCreditor: initialCreditor,
               );
             },
+          ),
+          GoRoute(
+            path: 'inventory',
+            builder: (context, state) => const StockInventoryScreen(),
           ),
         ],
       ),

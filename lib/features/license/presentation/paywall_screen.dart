@@ -149,8 +149,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.amber.withOpacity(0.15),
-                        border: Border.all(color: Colors.amber.withOpacity(0.4), width: 2),
+                        color: Colors.amber.withValues(alpha: 0.15),
+                        border: Border.all(color: Colors.amber.withValues(alpha: 0.4), width: 2),
                       ),
                       child: const Icon(
                         Icons.lock_clock_rounded,
@@ -188,9 +188,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     Container(
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.06),
+                        color: Colors.white.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                        border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
                       ),
                       child: Column(
                         children: [
@@ -339,14 +339,14 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                         labelText: _isAmharic ? 'የማግበሪያ ኮድ ያስገቡ' : 'Enter Activation Code',
                         labelStyle: const TextStyle(color: Colors.amber),
                         filled: true,
-                        fillColor: Colors.white.withOpacity(0.08),
+                        fillColor: Colors.white.withValues(alpha: 0.08),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: const BorderSide(color: Colors.amber),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
@@ -361,7 +361,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.2),
+                          color: Colors.red.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.red.shade400),
                         ),

@@ -2179,11 +2179,11 @@ class _DebtorDetailScreenState extends ConsumerState<DebtorDetailScreen> {
                                             ],
                                           ),
                                         );
-                                      }).toList(),
+                                      }),
                                     ],
                                   ),
                                 );
-                              }).toList(),
+                              }),
                               const Divider(),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
