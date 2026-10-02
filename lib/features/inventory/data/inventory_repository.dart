@@ -1,13 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../../../core/app_error_mapper.dart';
 import '../domain/stock_item.dart';
 import '../domain/stock_transaction.dart';
 
 class InventoryRepository {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _db;
+  final String _userId;
 
-  String get _userId => _auth.currentUser?.uid ?? '';
+  InventoryRepository(this._db, this._userId);
 
   CollectionReference<Map<String, dynamic>> get _inventoryRef =>
       _db.collection('users').doc(_userId).collection('inventory');

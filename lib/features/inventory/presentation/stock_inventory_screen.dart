@@ -37,9 +37,6 @@ class _StockInventoryScreenState extends ConsumerState<StockInventoryScreen>
     final qtyCtrl = TextEditingController(text: existing?.quantity.toStringAsFixed(2) ?? '');
     final unitCtrl = TextEditingController(text: existing?.unit ?? 'ኪሎ');
     final priceCtrl = TextEditingController(text: existing?.unitPrice.toStringAsFixed(2) ?? '');
-    final thresholdCtrl = TextEditingController(
-        text: (existing?.lowStockThreshold ?? 5.0).toStringAsFixed(2));
-    final noteCtrl = TextEditingController();
 
     showDialog(
       context: context,
@@ -78,18 +75,13 @@ class _StockInventoryScreenState extends ConsumerState<StockInventoryScreen>
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: _dialogField(unitCtrl, 'መለኪያ', Icons.straighten_outlined),
+                    child: _dialogField(unitCtrl, 'መለኪያ', Icons.straighten_outlined, readOnly: true),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
               _dialogField(priceCtrl, 'ዋጋ በ ETB', Icons.attach_money_rounded,
                   numeric: true),
-              const SizedBox(height: 10),
-              _dialogField(thresholdCtrl, 'የዝቅተኛ ምልክት (Low stock alert)',
-                  Icons.warning_amber_outlined, numeric: true),
-              const SizedBox(height: 10),
-              _dialogField(noteCtrl, 'ማስታወሻ (አስፈላጊ ከሆነ)', Icons.notes_rounded),
             ],
           ),
         ),
@@ -108,8 +100,6 @@ class _StockInventoryScreenState extends ConsumerState<StockInventoryScreen>
               final qty = double.tryParse(qtyCtrl.text) ?? 0;
               final price = double.tryParse(priceCtrl.text) ?? 0;
               final unit = unitCtrl.text.trim().isNotEmpty ? unitCtrl.text.trim() : 'ኪሎ';
-              final threshold = double.tryParse(thresholdCtrl.text) ?? 5.0;
-              final note = noteCtrl.text.trim();
 
               if (name.isEmpty || qty <= 0 || price <= 0) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -127,7 +117,6 @@ class _StockInventoryScreenState extends ConsumerState<StockInventoryScreen>
                     quantity: qty,
                     unit: unit,
                     unitPrice: price,
-                    lowStockThreshold: threshold,
                     lastUpdated: DateTime.now(),
                   ));
                   if (mounted) {
@@ -146,9 +135,8 @@ class _StockInventoryScreenState extends ConsumerState<StockInventoryScreen>
                       unit: unit,
                       unitPrice: price,
                       lastUpdated: DateTime.now(),
-                      lowStockThreshold: threshold,
+                      lowStockThreshold: 5.0,
                     ),
-                    note: note.isNotEmpty ? note : null,
                   );
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -339,9 +327,10 @@ class _StockInventoryScreenState extends ConsumerState<StockInventoryScreen>
   // ─── HELPERS ────────────────────────────────────────────────────────────────
 
   Widget _dialogField(TextEditingController ctrl, String hint, IconData icon,
-      {bool numeric = false}) {
+      {bool numeric = false, bool readOnly = false}) {
     return TextField(
       controller: ctrl,
+      readOnly: readOnly,
       keyboardType: numeric
           ? const TextInputType.numberWithOptions(decimal: true)
           : TextInputType.text,

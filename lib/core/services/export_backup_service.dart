@@ -145,6 +145,21 @@ class ExportBackupService {
     );
   }
 
+  /// Helper to convert any raw Firestore object (like Timestamp) into JSON encodable primitive
+  dynamic _cleanJsonValue(dynamic val) {
+    if (val == null) return null;
+    if (val is Timestamp) {
+      return val.toDate().toIso8601String();
+    } else if (val is DateTime) {
+      return val.toIso8601String();
+    } else if (val is List) {
+      return val.map(_cleanJsonValue).toList();
+    } else if (val is Map) {
+      return val.map((k, v) => MapEntry(k.toString(), _cleanJsonValue(v)));
+    }
+    return val;
+  }
+
   /// 2. EXPORT TO JSON BACKUP (Full Schema for Restore)
   Future<void> exportToJsonBackup() async {
     _checkAuth();
@@ -163,7 +178,7 @@ class ExportBackupService {
         return {
           'id': rDoc.id,
           'amount': rMap['amount'],
-          'date': (rMap['date'] as Timestamp?)?.toDate().toIso8601String(),
+          'date': _cleanJsonValue(rMap['date']),
           'note': rMap['note'],
           'bankName': rMap['bankName'],
         };
@@ -173,12 +188,12 @@ class ExportBackupService {
         'id': doc.id,
         'name': data['name'],
         'phone': data['phone'],
-        'items': data['items'],
+        'items': _cleanJsonValue(data['items']),
         'totalBorrowed': data['totalBorrowed'],
         'totalPaid': data['totalPaid'],
-        'borrowedDate': (data['borrowedDate'] as Timestamp?)?.toDate().toIso8601String(),
-        'lastTransactionDate': (data['lastTransactionDate'] as Timestamp?)?.toDate().toIso8601String(),
-        'settledDate': (data['settledDate'] as Timestamp?)?.toDate().toIso8601String(),
+        'borrowedDate': _cleanJsonValue(data['borrowedDate']),
+        'lastTransactionDate': _cleanJsonValue(data['lastTransactionDate']),
+        'settledDate': _cleanJsonValue(data['settledDate']),
         'keepRecord': data['keepRecord'] ?? false,
         'repayments': repaymentsData,
       });
@@ -196,7 +211,7 @@ class ExportBackupService {
         return {
           'id': rDoc.id,
           'amount': rMap['amount'],
-          'date': (rMap['date'] as Timestamp?)?.toDate().toIso8601String(),
+          'date': _cleanJsonValue(rMap['date']),
           'note': rMap['note'],
           'bankName': rMap['bankName'],
         };
@@ -206,14 +221,30 @@ class ExportBackupService {
         'id': doc.id,
         'name': data['name'],
         'phone': data['phone'],
-        'items': data['items'],
+        'items': _cleanJsonValue(data['items']),
         'totalBorrowed': data['totalBorrowed'],
         'totalPaid': data['totalPaid'],
-        'borrowedDate': (data['borrowedDate'] as Timestamp?)?.toDate().toIso8601String(),
-        'lastTransactionDate': (data['lastTransactionDate'] as Timestamp?)?.toDate().toIso8601String(),
-        'settledDate': (data['settledDate'] as Timestamp?)?.toDate().toIso8601String(),
+        'borrowedDate': _cleanJsonValue(data['borrowedDate']),
+        'lastTransactionDate': _cleanJsonValue(data['lastTransactionDate']),
+        'settledDate': _cleanJsonValue(data['settledDate']),
         'keepRecord': data['keepRecord'] ?? false,
         'repayments': repaymentsData,
+      });
+    }
+
+    // C. Fetch Inventory (Shop Stock Items)
+    final inventorySnap = await _db.collection('users').doc(uid).collection('inventory').get();
+    final List<Map<String, dynamic>> inventoryList = [];
+    for (var doc in inventorySnap.docs) {
+      final data = doc.data();
+      inventoryList.add({
+        'id': doc.id,
+        'name': data['name'],
+        'quantity': data['quantity'],
+        'unit': data['unit'],
+        'unitPrice': data['unitPrice'],
+        'lowStockThreshold': data['lowStockThreshold'],
+        'lastUpdated': _cleanJsonValue(data['lastUpdated']),
       });
     }
 
@@ -224,6 +255,7 @@ class ExportBackupService {
       'exportedAt': DateTime.now().toIso8601String(),
       'debtors': debtorsList,
       'creditors': creditorsList,
+      'inventory': inventoryList,
     };
 
     final jsonStr = const JsonEncoder.withIndent('  ').convert(backupPayload);
@@ -234,7 +266,7 @@ class ExportBackupService {
     await file.writeAsString(jsonStr);
 
     await Share.shareXFiles(
-      [XFile(filePath)],
+      [XFile(filePath, mimeType: 'application/json')],
       subject: 'የዕዳ መዝገብ JSON ባክአፕ ($dateStr)',
     );
   }
@@ -450,6 +482,26 @@ class ExportBackupService {
           if (r['bankName'] != null) 'bankName': r['bankName'],
         }, SetOptions(merge: true));
       }
+    }
+
+    // --- RESTORE INVENTORY ---
+    final inventoryList = (backup['inventory'] as List?) ?? [];
+    for (var inv in inventoryList) {
+      final String docId = (inv['id'] != null && (inv['id'] as String).isNotEmpty)
+          ? inv['id']
+          : _db.collection('users').doc(uid).collection('inventory').doc().id;
+
+      final docRef = _db.collection('users').doc(uid).collection('inventory').doc(docId);
+      await docRef.set({
+        'name': inv['name'] ?? '',
+        'quantity': (inv['quantity'] ?? 0).toDouble(),
+        'unit': inv['unit'] ?? 'ኪሎ',
+        'unitPrice': (inv['unitPrice'] ?? 0).toDouble(),
+        'lowStockThreshold': (inv['lowStockThreshold'] ?? 5.0).toDouble(),
+        'lastUpdated': Timestamp.fromDate(
+          inv['lastUpdated'] != null ? DateTime.parse(inv['lastUpdated']) : DateTime.now(),
+        ),
+      }, SetOptions(merge: true));
     }
 
     return RestoreResult(
