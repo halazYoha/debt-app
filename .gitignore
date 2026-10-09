@@ -46,3 +46,7 @@ app.*.map.json
 /android/build/
 android/build/
 
+# Key & Signing Secrets
+*.jks
+**/key.properties
+
